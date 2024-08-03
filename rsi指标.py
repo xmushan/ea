@@ -18,6 +18,7 @@ timeframe = mt5.TIMEFRAME_M15  # 时间框架
 lot_size = 0.05  # 每次交易的手数
 bars = 100  # 获取最近100个柱数据
 slippage = 5  # 允许的价格滑点
+last_kline_time = None  # 用于存储上一次K线时间戳
 
 # 获取当前价格
 def get_current_price(symbol):
@@ -32,7 +33,6 @@ def get_historical_data(symbol, timeframe):
         return None
     rates_frame = pd.DataFrame(rates)
     rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s')
-    print(rates_frame)
     return rates_frame
 
 # 计算RSI
@@ -77,6 +77,8 @@ def open_order(symbol, lot, order_type, price):
     result = mt5.order_send(request)
     if result.retcode == 10009:
         print('success')
+    else:
+        print(result)
 
 # 当前订单是否获得收益
 def checkCurrentIsprofit():
@@ -88,15 +90,12 @@ def checkCurrentIsprofit():
     for index, order in orders_df.iterrows():
         if order['profit'] >= 5:
             set_protective_stop(order)
-        else:
-            print('当前订单无收益',order['ticket'])
 
 def set_protective_stop(order):
     symbol = order['symbol']
     ticket = order['ticket']
     order_type = order['type']
     volume =order['volume']
-    print(volume)
     close_type = mt5.ORDER_TYPE_SELL if order_type == mt5.ORDER_TYPE_BUY else mt5.ORDER_TYPE_BUY
     request = {
         'action': mt5.TRADE_ACTION_DEAL,
@@ -108,37 +107,51 @@ def set_protective_stop(order):
         "type_time": mt5.ORDER_TIME_GTC, # 订单到期类型
         "type_filling": mt5.ORDER_FILLING_IOC, #订单成交类型
     }
-    result = mt5.order_send(request)
-    print(result)
-    if result.retcode == 10009:
-        print('平仓成功')
-    else:
-        print('平仓失败')
+    mt5.order_send(request)
+
+# 获取当前K线时间戳
+def get_current_kline_time(symbol, timeframe):
+    rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, bars)
+    if rates is None or len(rates) == 0:
+        print(f"Failed to get rates: {mt5.last_error()}")
+        return None
+    rates_frame = pd.DataFrame(rates)
+    utc_time = datetime.fromtimestamp(rates_frame['time'].iloc[-1], tz=timezone.utc)
+    return utc_time
+
 
 def main():
     positions_total=mt5.positions_total()
     if positions_total >= 10:
         checkCurrentIsprofit()
+        print('已达当前最大订单量')
         return
     data = get_historical_data(symbol, timeframe)
     upper,lower = CalculateBollingerBands(data)
     rsi = calculate_rsi(data)
     bid, ask = get_current_price(symbol)
+    global last_kline_time
+    current_kline_time = get_current_kline_time(symbol, timeframe)
+    if (last_kline_time == current_kline_time):
+        print('当前K线下过单')
+        return
     # 如果rsi指标小于30，执行买多操作
     if (rsi < 30 and ask < lower):
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
+        last_kline_time = current_kline_time
     # rsi指标大于70，执行做空操作
     elif (rsi > 76 and bid > upper):
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_SELL, bid)
+        last_kline_time = current_kline_time
     else:
         print('无信号')
         print(rsi)
-        print(upper,lower)
+        print(upper,lower) 
         print(bid,ask)
 
 while True:
     main()
-    time.sleep(1)
+    time.sleep(2)
 
