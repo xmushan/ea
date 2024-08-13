@@ -176,23 +176,18 @@ def main():
     if (last_kline_time == current_kline_time):
         print('当前K线下过单')
         return
-    # 如果rsi指标小于60,cci小于0，执行买多操作
-    if (rsi <= 60 and cci <= 0 and ask < lower):
+    # rsi指标小于40，执行做多操作
+    if (rsi <= 35 and cci < -100 & ask < lower):
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
         last_kline_time = current_kline_time
-    # 如果rsi指标小于25，执行买多操作
-    if ((rsi <= 25 and ask < lower) or cci < -100):
-        checkCurrentIsprofit()
-        open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
-        last_kline_time = current_kline_time
-    # rsi指标大于75，执行做空操作    
-    elif (rsi >= 80 and bid > upper):
+    # rsi指标大于75，执行做空操作
+    elif (rsi >= 75 and cci > 135 and bid > upper):
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_SELL, bid)
         last_kline_time = current_kline_time
     # rsi指标在40 和65之间，检查收益
-    elif (cci >= 150):
+    elif (rsi >= 40 and rsi <= 65):
         checkCurrentIsprofit()
         print('rsi指标在40 和65之间，检查收益')
     else:
