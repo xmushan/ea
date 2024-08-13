@@ -36,6 +36,12 @@ def get_historical_data(symbol, timeframe):
     rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s')
     return rates_frame
 
+ # 计算移动均线
+def calculate_ma(symbol, timeframe):
+    df['MA'] = df['close'].rolling(window=ma_period).mean()
+    last_ma = df['MA'].iloc[-1]
+    return last_ma
+
 # 计算RSI
 def calculate_rsi(data, period=14):
     delta = data['close'].diff()
@@ -75,7 +81,7 @@ def CalculateBollingerBands(data):
     df['Upper_Band'] = df['SMA_20'] + (df['STD_20'] * 2)
     df['Lower_Band'] = df['SMA_20'] - (df['STD_20'] * 2)
     bollingData = df[['close', 'SMA_20', 'Upper_Band', 'Lower_Band','open']].iloc[-1]
-    return bollingData.Upper_Band,bollingData.Lower_Band
+    return bollingData.Upper_Band,bollingData.Lower_Band,bollingData.SMA_20
 
 # 开仓函数
 def open_order(symbol, lot, order_type, price):
@@ -109,7 +115,7 @@ def checkCurrentIsprofit(flag = True,isAll = False):
         for index, order in orders_df.iterrows():
             set_protective_stop(order)
         return
-    if (isAll == True and total >= 20):
+    if (isAll == True and total >= 15):
         for index, order in orders_df.iterrows():
             set_protective_stop(order)
         return
@@ -158,16 +164,21 @@ def is_within_business_hours():
 def main():
     positions_total=mt5.positions_total()
     isWorking = is_within_business_hours()
-    # if (isWorking == False):
-    #     print('时间不符合')
-    #     checkCurrentIsprofit(False)
-    #     return
-    # if positions_total >= 5:
-    #     checkCurrentIsprofit()
-    #     print('已达当前最大订单量')
-    #     return
+    if (isWorking == False):
+        print('时间不符合')
+        checkCurrentIsprofit(False)
+        return
+    if positions_total >= 5:
+        checkCurrentIsprofit()
+        print('已达当前最大订单量')
+        return
+    short_ma = calculate_ma(symbol, timeframe, 50)  # 50周期均线
+    long_ma = calculate_ma(symbol, timeframe, 200)  # 200周期均线
+    # 检查趋势方向
+    is_uptrend = short_ma > long_ma
+    is_downtrend = short_ma < long_ma
     data = get_historical_data(symbol, timeframe)
-    upper,lower = CalculateBollingerBands(data)
+    upper,lower,middle = CalculateBollingerBands(data)
     rsi = calculate_rsi(data,20)
     cci = calculate_cci(data,20)
     bid, ask = get_current_price(symbol)
@@ -177,12 +188,17 @@ def main():
         print('当前K线下过单')
         return
     # rsi指标小于40，执行做多操作
-    if (rsi <= 35 and cci < -100 & ask < lower):
+    if (rsi <= 35 and cci < -100 & ask < lower and is_uptrend):
+        checkCurrentIsprofit()
+        open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
+        last_kline_time = current_kline_time
+    # rsi指标在40到50之间，cci < -120，并且价格接近布林带中轨，执行做多操作
+    elif 40 < rsi <= 50 and cci < -120 and ask < middle and is_uptrend:
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
         last_kline_time = current_kline_time
     # rsi指标大于75，执行做空操作
-    elif (rsi >= 75 and cci > 135 and bid > upper):
+    elif (rsi >= 75 and cci > 135 and bid > upper and is_downtrend):
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_SELL, bid)
         last_kline_time = current_kline_time
@@ -196,7 +212,6 @@ def main():
         print(upper,lower) 
         print(bid,ask)
         checkCurrentIsprofit(True,True)
-
 
 while True:
     main()
