@@ -188,17 +188,17 @@ def main():
         print('当前K线下过单')
         return
     # rsi指标小于40，执行做多操作
-    if (rsi <= 35 and cci < -100 & ask < lower and is_uptrend):
+    if ((rsi <= 35 or cci <= -150) & ask < lower):
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
         last_kline_time = current_kline_time
     # rsi指标在40到50之间，cci < -120，并且价格接近布林带中轨，执行做多操作
-    elif 40 < rsi <= 50 and cci < -120 and ask < middle and is_uptrend:
+    elif 30 < rsi <= 40 and cci <= -70 and ask < middle and is_uptrend:
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
         last_kline_time = current_kline_time
     # rsi指标大于75，执行做空操作
-    elif (rsi >= 75 and cci > 135 and bid > upper and is_downtrend):
+    elif (rsi >= 75 and cci > 155 and bid > upper):
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_SELL, bid)
         last_kline_time = current_kline_time
