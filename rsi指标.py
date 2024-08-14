@@ -4,6 +4,7 @@ import numpy as np
 from datetime import datetime, timedelta, timezone,time
 from config import login, server, password
 import time as timeSleep
+from log import saveLog
 
 # 初始化MT5
 mt5.initialize()
@@ -37,11 +38,21 @@ def get_historical_data(symbol, timeframe):
     return rates_frame
 
  # 计算移动均线
-def calculate_ma(symbol, timeframe):
+def calculate_ma(symbol, timeframe, ma_period):
+    # 获取历史数据
+    bars = mt5.copy_rates_from_pos(symbol, timeframe, 0, ma_period + 100)  # 获取足够的历史数据
+    # 检查是否获取到足够的数据
+    if bars is None or len(bars) < ma_period:
+        mt5.shutdown()
+        raise ValueError("获取数据不足，无法计算均线")
+    # 将数据转换为Pandas DataFrame
+    df = pd.DataFrame(bars)
+    df['time'] = pd.to_datetime(df['time'], unit='s')
+    # 计算移动平均线
     df['MA'] = df['close'].rolling(window=ma_period).mean()
+    # 返回最后一条数据的均线值
     last_ma = df['MA'].iloc[-1]
     return last_ma
-
 # 计算RSI
 def calculate_rsi(data, period=14):
     delta = data['close'].diff()
@@ -187,21 +198,24 @@ def main():
     if (last_kline_time == current_kline_time):
         print('当前K线下过单')
         return
-    # rsi指标小于40，执行做多操作
+    # rsi指标小于35，执行做多操作
     if ((rsi <= 35 or cci <= -150) & ask < lower):
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
         last_kline_time = current_kline_time
+        saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---lower:{lower}---rsi指标小于35，执行做多操作")
     # rsi指标在40到50之间，cci < -120，并且价格接近布林带中轨，执行做多操作
     elif 30 < rsi <= 40 and cci <= -70 and ask < middle and is_uptrend:
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
         last_kline_time = current_kline_time
+        saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---middle:{middle}---is_uptrend:{is_uptrend}---布林带中轨，执行做多操作")
     # rsi指标大于75，执行做空操作
-    elif (rsi >= 75 and cci > 155 and bid > upper):
+    elif (rsi >= 75 and cci >= 155 and bid > upper):
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_SELL, bid)
         last_kline_time = current_kline_time
+        saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---bid:{bid}---upper:{upper}---rsi指标大于75，执行做空操作")
     # rsi指标在40 和65之间，检查收益
     elif (rsi >= 40 and rsi <= 65):
         checkCurrentIsprofit()
@@ -212,6 +226,7 @@ def main():
         print(upper,lower) 
         print(bid,ask)
         checkCurrentIsprofit(True,True)
+    saveLog(f"rsi:{rsi}---cci:{cci}---bid:{bid}---ask:{ask}---upper:{upper}---lower:{lower}---middle:{middle}")
 
 while True:
     main()
