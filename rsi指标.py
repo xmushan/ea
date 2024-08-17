@@ -15,7 +15,7 @@ if not authorized:
     mt5.shutdown()
     exit()
 
-symbol = "XAUUSDc"  # 交易符号
+symbol = "XAUUSDm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
 lot_size = 0.02  # 每次交易的手数
 bars = 100  # 获取最近100个柱数据
@@ -190,8 +190,8 @@ def main():
     is_downtrend = short_ma < long_ma
     data = get_historical_data(symbol, timeframe)
     upper,lower,middle = CalculateBollingerBands(data)
-    rsi = calculate_rsi(data,20)
-    cci = calculate_cci(data,20)
+    rsi = calculate_rsi(data,25)
+    cci = calculate_cci(data,15)
     bid, ask = get_current_price(symbol)
     global last_kline_time
     current_kline_time = get_current_kline_time(symbol, timeframe)
@@ -199,13 +199,13 @@ def main():
         print('当前K线下过单')
         return
     # rsi指标小于35，执行做多操作
-    if ((rsi <= 35 or cci <= -150) & ask < lower):
+    if ((rsi <= 35 or cci <= -150) and ask < lower):
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
         last_kline_time = current_kline_time
         saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---lower:{lower}---rsi指标小于35，执行做多操作")
     # rsi指标在40到50之间，cci < -120，并且价格接近布林带中轨，执行做多操作
-    elif 30 < rsi <= 40 and cci <= -70 and ask < middle and is_uptrend:
+    elif 45 <= rsi <= 60 and cci <= -70 and ask < middle and is_uptrend:
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
         last_kline_time = current_kline_time
@@ -220,13 +220,14 @@ def main():
     elif (rsi >= 40 and rsi <= 65):
         checkCurrentIsprofit()
         print('rsi指标在40 和65之间，检查收益')
+        saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---bid:{bid}---upper:{upper}---lower:{lower}---检查收益")
     else:
         print('无信号')
-        print(rsi)
+        print(rsi,cci)
         print(upper,lower) 
         print(bid,ask)
         checkCurrentIsprofit(True,True)
-    saveLog(f"rsi:{rsi}---cci:{cci}---bid:{bid}---ask:{ask}---upper:{upper}---lower:{lower}---middle:{middle}")
+        saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---bid:{bid}---upper:{upper}---lower:{lower}---无信号")
 
 while True:
     main()

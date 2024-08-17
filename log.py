@@ -1,7 +1,7 @@
 import os
 
 
-folder_path = r'C:\Users\Administrator\Desktop\pythonEa'
+folder_path = './'
 
 # 创建文件夹（如果不存在）
 os.makedirs(folder_path, exist_ok=True)
