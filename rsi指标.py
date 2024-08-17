@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone,time
 from config import login, server, password
 import time as timeSleep
 from log import saveLog
+import pytz
 
 # 初始化MT5
 mt5.initialize()
@@ -78,8 +79,6 @@ def calculate_cci(data,period=14):
     # 获取最后一条数据的CCI值
     last_cci = data['CCI'].iloc[-1]
     return last_cci
-
-
 
 # 计算布林带
 def CalculateBollingerBands(data): 
@@ -163,12 +162,14 @@ def get_current_kline_time(symbol, timeframe):
     return utc_time
 
 
-def is_within_business_hours():
-    # 获取当前时间
-    current_time = datetime.now().time()
+def is_within_business_hours(timezone_str='Asia/Shanghai'):
+    # 获取指定时区的当前时间
+    timezone = pytz.timezone(timezone_str)
+    current_time = datetime.now(timezone).time()
+    print(current_time,19191919)
     # 定义工作时间范围
-    start_time = time(7, 30, 0)  # 早上 7.30 点
-    end_time = time(18, 0, 0)   # 晚上 18 点
+    start_time = time(7, 30, 0)  # 早上 7:30
+    end_time = time(18, 0, 0)    # 晚上 18:00
     # 判断当前时间是否在工作时间范围内
     return start_time <= current_time <= end_time
 
