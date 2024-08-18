@@ -124,7 +124,7 @@ def checkCurrentIsprofit(flag = True,isAll = False):
     for index, order in orders_df.iterrows():
         total = total + order['profit']
     # 最大回撤金额
-    if (total < 50):
+    if (total < -50):
         for index, order in orders_df.iterrows():
             set_protective_stop(order)
         timeSleep.sleep(3600)
