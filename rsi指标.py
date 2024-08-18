@@ -15,8 +15,10 @@ if not authorized:
     print(f"Failed to login to MT5: {mt5.last_error()}")
     mt5.shutdown()
     exit()
-
+# symbol = "GOLD_"  # 交易符号
 symbol = "XAUUSDm"  # 交易符号
+# symbol = "XAUUSDc"  # 交易符号
+# symbol = "BTCUSDc"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
 lot_size = 0.02  # 每次交易的手数
 bars = 100  # 获取最近100个柱数据
@@ -121,6 +123,12 @@ def checkCurrentIsprofit(flag = True,isAll = False):
     orders_df = pd.DataFrame(list(orders), columns=orders[0]._asdict().keys())
     for index, order in orders_df.iterrows():
         total = total + order['profit']
+    # 最大回撤金额
+    if (total < 50):
+        for index, order in orders_df.iterrows():
+            set_protective_stop(order)
+        timeSleep.sleep(3600)
+        return
     if (flag == False):
         for index, order in orders_df.iterrows():
             set_protective_stop(order)
@@ -149,7 +157,8 @@ def set_protective_stop(order):
         "type_time": mt5.ORDER_TIME_GTC, # 订单到期类型
         "type_filling": mt5.ORDER_FILLING_IOC, #订单成交类型
     }
-    mt5.order_send(request)
+    res =  mt5.order_send(request)
+    print(res)
 
 # 获取当前K线时间戳
 def get_current_kline_time(symbol, timeframe):
@@ -176,12 +185,13 @@ def is_within_business_hours(timezone_str='Asia/Shanghai'):
 def main():
     positions_total=mt5.positions_total()
     isWorking = is_within_business_hours()
+    checkCurrentIsprofit()
     if (isWorking == False):
         print('时间不符合')
         checkCurrentIsprofit(False)
         return
     if positions_total >= 5:
-        checkCurrentIsprofit()
+        checkCurrentIsprofit(True,True)
         print('已达当前最大订单量')
         return
     short_ma = calculate_ma(symbol, timeframe, 50)  # 50周期均线
@@ -200,7 +210,7 @@ def main():
         print('当前K线下过单')
         return
     # rsi指标小于35，执行做多操作
-    if ((rsi <= 35 or cci <= -150) and ask < lower):
+    if ((rsi <= 35 or cci <= -150) and ask < lower ):
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
         last_kline_time = current_kline_time
@@ -217,9 +227,15 @@ def main():
         open_order(symbol, lot_size, mt5.ORDER_TYPE_SELL, bid)
         last_kline_time = current_kline_time
         saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---bid:{bid}---upper:{upper}---rsi指标大于75，执行做空操作")
+    elif rsi <= 50 and cci <= -30 and ask > middle and is_downtrend:
+        checkCurrentIsprofit()
+        open_order(symbol, lot_size, mt5.ORDER_TYPE_SELL, bid)
+        last_kline_time = current_kline_time
+        saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---middle:{middle}---is_downtrend:{is_downtrend}---布林带中轨，执行做空操作")
     # rsi指标在40 和65之间，检查收益
     elif (rsi >= 40 and rsi <= 65):
-        checkCurrentIsprofit()
+        checkCurrentIsprofit(True,True)
+        print(f'is_downtrend:{is_downtrend},is_uptrend:{is_uptrend}')
         print('rsi指标在40 和65之间，检查收益')
         saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---bid:{bid}---upper:{upper}---lower:{lower}---检查收益")
     else:
@@ -227,6 +243,7 @@ def main():
         print(rsi,cci)
         print(upper,lower) 
         print(bid,ask)
+        print(f'is_downtrend:{is_downtrend},is_uptrend:{is_uptrend}')
         checkCurrentIsprofit(True,True)
         saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---bid:{bid}---upper:{upper}---lower:{lower}---无信号")
 
