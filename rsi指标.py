@@ -181,9 +181,16 @@ def is_within_business_hours(timezone_str='Asia/Shanghai'):
     print(current_time,19191919)
     # 定义工作时间范围
     start_time = time(7, 30, 0)  # 早上 7:30
-    end_time = time(18, 0, 0)    # 晚上 18:00
+    stop_time = time(17, 0, 0)  # 下午 5:00
+    end_time = time(18, 0, 0)    # 下午 18:00
+    # 如果时间在5点之后，就不下单了
+    if (current_time >= stop_time):
+        checkCurrentIsprofit()
+        return False
     # 判断当前时间是否在工作时间范围内
-    return start_time <= current_time <= end_time
+    if (start_time <= current_time <= end_time):
+        checkCurrentIsprofit(False)
+        return False
 
 def main():
     positions_total=mt5.positions_total()
@@ -191,7 +198,6 @@ def main():
     checkCurrentIsprofit()
     if (isWorking == False):
         print('时间不符合')
-        checkCurrentIsprofit(False)
         return
     if positions_total >= 5:
         checkCurrentIsprofit(True,True)
