@@ -24,6 +24,9 @@ lot_size = 0.02  # 每次交易的手数
 bars = 100  # 获取最近100个柱数据
 slippage = 5  # 允许的价格滑点
 last_kline_time = None  # 用于存储上一次K线时间戳
+profit = 5 # 单比订单盈利额
+totalProfit = 15 # 总盈利额度
+retracement = -50 # 最大回撤
 
 # 获取当前价格
 def get_current_price(symbol):
@@ -124,7 +127,7 @@ def checkCurrentIsprofit(flag = True,isAll = False):
     for index, order in orders_df.iterrows():
         total = total + order['profit']
     # 最大回撤金额
-    if (total < -50):
+    if (total < retracement):
         for index, order in orders_df.iterrows():
             set_protective_stop(order)
         timeSleep.sleep(3600)
@@ -133,12 +136,12 @@ def checkCurrentIsprofit(flag = True,isAll = False):
         for index, order in orders_df.iterrows():
             set_protective_stop(order)
         return
-    if (isAll == True and total >= 15):
+    if (isAll == True and total >= totalProfit):
         for index, order in orders_df.iterrows():
             set_protective_stop(order)
         return
     for index, order in orders_df.iterrows():
-        if order['profit'] >= 5:
+        if order['profit'] >= profit:
             set_protective_stop(order)
 
 def set_protective_stop(order):
