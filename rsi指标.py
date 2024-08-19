@@ -219,7 +219,7 @@ def main():
         print('当前K线下过单')
         return
     # rsi指标小于35，执行做多操作
-    if ((rsi <= 35 or cci <= -150) and ask < lower ):
+    if ((rsi <= 40 or cci <= -180) and ask < lower ):
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
         last_kline_time = current_kline_time
