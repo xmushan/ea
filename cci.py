@@ -5,9 +5,9 @@ import time as timeSleep
 from datetime import datetime, timezone
 
 # symbol = "GOLD_"  # 交易符号
-symbol = "XAUUSDm"  # 交易符号
+# symbol = "XAUUSDm"  # 交易符号
 # symbol = "XAUUSDc"  # 交易符号
-# symbol = "BTCUSDc"  # 交易符号
+symbol = "BTCUSDm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
 lot_size = 0.02  # 每次交易的手数
 bars = 100  # 获取最近100个柱数据
@@ -18,6 +18,7 @@ totalProfit = 10 # 总盈利额度
 retracement = -50 # 最大回撤
 bars = 100  # 获取最近100个柱数据
 
+last_kline_time = None  # 用于存储上一次K线时间戳
 # 获取当前价格
 def get_current_price(symbol):
     tick = mt5.symbol_info_tick(symbol)
@@ -115,7 +116,10 @@ def open_order(symbol, lot, order_type, price):
         'type_filling': mt5.ORDER_FILLING_IOC,
     }
     result = mt5.order_send(request)
+    global last_kline_time
+    current_kline_time = get_current_kline_time(symbol, timeframe)
     if result.retcode == 10009:
+        last_kline_time = current_kline_time
         print('success')
     else:
         print(result)
@@ -127,30 +131,36 @@ def checkCurrentIsprofit(flag = True,isAll = False):
     if not orders:
         return
     orders_df = pd.DataFrame(list(orders), columns=orders[0]._asdict().keys())
-    for index, order in orders_df.iterrows():
+    filtered_orders_df = orders_df.loc[orders_df['symbol'] == symbol]
+    for index, order in filtered_orders_df.iterrows():
         total = total + order['profit']
+    print(total < retracement)
     # 最大回撤金额
     if (total < retracement):
-        for index, order in orders_df.iterrows():
+        for index, order in filtered_orders_df.iterrows():
             set_protective_stop(order)
-            timeSleep.sleep(3600)
+            # timeSleep.sleep(3600)
         return
     if (flag == False):
-        for index, order in orders_df.iterrows():
+        for index, order in filtered_orders_df.iterrows():
             set_protective_stop(order)
         return
     if (isAll == True and total >= totalProfit):
-        for index, order in orders_df.iterrows():
+        for index, order in filtered_orders_df.iterrows():
             set_protective_stop(order)
         return
-    for index, order in orders_df.iterrows():
+    for index, order in filtered_orders_df.iterrows():
         if order['profit'] >= profit:
             set_protective_stop(order)
 
 def judegeOrder():
     positions_total=mt5.positions_total()
-    if (positions_total >=5):
-        checkCurrentIsprofit(True,True)
+    current_kline_time = get_current_kline_time(symbol, timeframe)
+    if (last_kline_time == current_kline_time):
+        print('当前K线下过单')
+        return
+    if (positions_total >=10):
+        print('已达当前最大订单量')
         return
     data = get_historical_data(symbol, timeframe)
     cci = calculate_cci(data,15)
@@ -161,21 +171,26 @@ def judegeOrder():
         # 多
         if (cci <= -120 and rsi and ask < lower):
             open_order(symbol, 0.01, mt5.ORDER_TYPE_BUY, ask)
-        if (cci <= -150 and ask < lower):
+        elif (cci <= -150 and ask < lower):
             open_order(symbol, 0.02, mt5.ORDER_TYPE_BUY, ask)
-        if (cci <= -180 and ask < lower):
+        elif (cci <= -180 and ask < lower):
             open_order(symbol, 0.03, mt5.ORDER_TYPE_BUY, ask)
-        if (cci <= -250 and ask < lower):
+        elif (cci <= -250 and ask < lower):
             open_order(symbol, 0.05, mt5.ORDER_TYPE_BUY, ask)
         # 空
-        if (cci >= 120 and bid > upper):
+        elif (cci >= 120 and bid > upper):
             open_order(symbol, 0.01, mt5.ORDER_TYPE_SELL, ask)
-        if (cci >= 150 and bid > upper):
+        elif (cci >= 150 and bid > upper):
             open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, ask)
-        if (cci >= 180 and bid > upper):
+        elif (cci >= 180 and bid > upper):
             open_order(symbol, 0.03, mt5.ORDER_TYPE_SELL, ask)
-        if (cci >= 250 and bid > upper):
+        elif (cci >= 250 and bid > upper):
             open_order(symbol, 0.05, mt5.ORDER_TYPE_SELL, ask)
-        if (-20 <= cci <= 30):
+        elif (-20 <= cci <= 30):
             checkCurrentIsprofit()
+        else:
+            print('无信号',rsi,cci)
+    else:
+        checkCurrentIsprofit()
+        print('无信号',rsi,cci)
     
