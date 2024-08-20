@@ -157,7 +157,7 @@ def judegeOrder():
     rsi = calculate_rsi(data,25)
     bid, ask = get_current_price(symbol)
     upper,lower,middle = CalculateBollingerBands(data)
-    if (25 <= rsi <= 70):
+    if (25 <= rsi <= 60):
         # 多
         if (cci <= -120 and rsi and ask < lower):
             open_order(symbol, 0.01, mt5.ORDER_TYPE_BUY, ask)
