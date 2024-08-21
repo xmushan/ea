@@ -22,13 +22,13 @@ symbol = "XAUUSDc"  # 交易符号
 # symbol = "BTCUSDc"  # 交易符号
 # symbol = "XAUUSDm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
-lot_size = 0.02  # 每次交易的手数
+lot_size = 0.03  # 每次交易的手数
 bars = 100  # 获取最近100个柱数据
 slippage = 5  # 允许的价格滑点
 last_kline_time = None  # 用于存储上一次K线时间戳
-profit = 5 # 单比订单盈利额
-totalProfit = 15 # 总盈利额度
-retracement = -50 # 最大回撤
+profit = 10 # 单比订单盈利额
+totalProfit = 30 # 总盈利额度
+retracement = -200 # 最大回撤
 
 # 获取当前价格
 def get_current_price(symbol):
@@ -164,6 +164,7 @@ def get_current_kline_time(symbol, timeframe):
     return utc_time
 
 def is_within_business_hours(timezone_str='Asia/Shanghai'):
+    global timeframe
     # 获取指定时区的当前时间
     timezone = pytz.timezone(timezone_str)
     current_time = datetime.now(timezone).time()
@@ -175,17 +176,19 @@ def is_within_business_hours(timezone_str='Asia/Shanghai'):
     EuropeEndTime = time(20, 30, 0)
     # 美盘时间
     UsaStartTime = time(20, 30, 0)
-    UsaopeEndTime = time(7, 30, 0)
+    UsaopeEndTime = time(7, 0, 0)
+    # 判断亚洲盘时间
     if asiaStartTime <= current_time <= asiaEndTime:
         return True
+    # 判断欧洲盘时间
     if EuropeStartTime <= current_time <= EuropeEndTime:
-        global timeframe
-        timeframe = mt5.TIMEFRAME_M30
-        return False
-    if UsaStartTime <= current_time <= UsaopeEndTime:
-        global timeframe
         timeframe = mt5.TIMEFRAME_H1
-        return False
+        return True
+    # 判断美盘时间（跨午夜）
+    if (current_time >= UsaStartTime) or (current_time <= UsaopeEndTime):
+        timeframe = mt5.TIMEFRAME_H1
+        return True
+
 
 def main():
     positions_total=mt5.positions_total()
@@ -205,32 +208,34 @@ def main():
     data = get_historical_data(symbol, timeframe)
     upper,lower,middle = CalculateBollingerBands(data)
     rsi = calculate_rsi(data,25)
-    cci = calculate_cci(data,15)
+    cci = calculate_cci(data,20)
     bid, ask = get_current_price(symbol)
     global last_kline_time
     current_kline_time = get_current_kline_time(symbol, timeframe)
     if (last_kline_time == current_kline_time):
+        checkCurrentIsprofit()
         print('当前K线下过单')
         return
     # rsi指标小于35，执行做多操作
-    if ((rsi <= 40 or cci <= -130) and ask < lower ):
+    if ((rsi <= 40 or cci <= -100) and ask < lower ):
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
         last_kline_time = current_kline_time
         saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---lower:{lower}---rsi指标小于35，执行做多操作")
     # rsi指标在40到50之间，cci < -120，并且价格接近布林带中轨，执行做多操作
-    elif 45 <= rsi <= 60 and cci <= -100 and ask < middle and is_uptrend:
+    elif 45 <= rsi <= 55 and cci <= -120 and ask < middle and is_uptrend:
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
         last_kline_time = current_kline_time
         saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---middle:{middle}---is_uptrend:{is_uptrend}---布林带中轨，执行做多操作")
     # rsi指标大于75，执行做空操作
-    elif (rsi >= 75 and cci >= 155 and bid > upper):
+    elif ((rsi >= 75 and cci >= 155 and bid > upper) or (cci >= 280 and bid > upper)):
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_SELL, bid)
         last_kline_time = current_kline_time
         saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---bid:{bid}---upper:{upper}---rsi指标大于75，执行做空操作")
-    elif rsi <= 50 and cci <= -30 and ask > middle and is_downtrend:
+    # 做空操作
+    elif ( 50 <= rsi <= 70 ) and cci >= 215 and bid > upper:
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_SELL, bid)
         last_kline_time = current_kline_time
@@ -252,6 +257,5 @@ def main():
 
 while True:
     main()
-    # judegeOrder()
     timeSleep.sleep(1)
 
