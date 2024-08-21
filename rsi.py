@@ -235,7 +235,7 @@ def main():
         last_kline_time = current_kline_time
         saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---bid:{bid}---upper:{upper}---rsi指标大于75，执行做空操作")
     # 做空操作
-    elif ( 50 <= rsi <= 70 ) and cci >= 215 and bid > upper:
+    elif ( 35 <= rsi <= 45 ) and cci <= 0 and bid < middle and is_downtrend:
         checkCurrentIsprofit()
         open_order(symbol, lot_size, mt5.ORDER_TYPE_SELL, bid)
         last_kline_time = current_kline_time
