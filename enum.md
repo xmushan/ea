@@ -1,1 +1,0 @@
-命令：pyinstaller --onefile rsi指标.py 

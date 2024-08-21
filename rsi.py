@@ -167,24 +167,29 @@ def is_within_business_hours(timezone_str='Asia/Shanghai'):
     # 获取指定时区的当前时间
     timezone = pytz.timezone(timezone_str)
     current_time = datetime.now(timezone).time()
-    # 定义工作时间范围
-    start_time = time(7, 0, 0)  # 早上 7:30
-    stop_time = time(17, 0, 0)  # 下午 5:00
-    end_time = time(18, 0, 0)    # 下午 18:00
-  # 判断当前时间是否在工作时间范围内
-    if start_time <= current_time <= stop_time:
+    # 亚洲盘时间
+    asiaStartTime = time(7, 0, 0)
+    asiaEndTime = time(15, 30, 0)
+    # 欧洲盘时间
+    EuropeStartTime = time(15, 30, 0)
+    EuropeEndTime = time(20, 30, 0)
+    # 美盘时间
+    UsaStartTime = time(20, 30, 0)
+    UsaopeEndTime = time(7, 30, 0)
+    if asiaStartTime <= current_time <= asiaEndTime:
         return True
-    elif stop_time < current_time <= end_time:
-        checkCurrentIsprofit()  # 在5点到6点之间调用函数
+    if EuropeStartTime <= current_time <= EuropeEndTime:
+        global timeframe
+        timeframe = mt5.TIMEFRAME_M30
         return False
-    else:
-        checkCurrentIsprofit(False)  # 在7:30之前或18:00之后调用该函数
+    if UsaStartTime <= current_time <= UsaopeEndTime:
+        global timeframe
+        timeframe = mt5.TIMEFRAME_H1
         return False
 
 def main():
     positions_total=mt5.positions_total()
     isWorking = is_within_business_hours()
-    checkCurrentIsprofit()
     if (isWorking == False):
         print('时间不符合')
         return
