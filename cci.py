@@ -193,4 +193,39 @@ def judegeOrder():
     else:
         checkCurrentIsprofit()
         print('无信号',rsi,cci)
+
+
+
+
+
+    # # rsi指标小于35，执行做多操作
+    # if ((rsi <= 40 or cci <= -100) and ask < lower and is_uptrend):
+    #     checkCurrentIsprofit()
+    #     open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
+    #     last_kline_time = current_kline_time
+    #     saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---lower:{lower}---rsi指标小于35，执行做多操作")
+    # # rsi指标在40到50之间，cci < -120，并且价格接近布林带中轨，执行做多操作
+    # elif 45 <= rsi <= 55 and cci <= -120 and ask < middle and is_uptrend:
+    #     checkCurrentIsprofit()
+    #     open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask)
+    #     last_kline_time = current_kline_time
+    #     saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---middle:{middle}---is_uptrend:{is_uptrend}---布林带中轨，执行做多操作")
+    # # rsi指标大于75，执行做空操作
+    # elif ((rsi >= 75 and cci >= 155 and bid > upper) or (cci >= 280 and bid > upper)):
+    #     checkCurrentIsprofit()
+    #     open_order(symbol, lot_size, mt5.ORDER_TYPE_SELL, bid)
+    #     last_kline_time = current_kline_time
+    #     saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---bid:{bid}---upper:{upper}---rsi指标大于75，执行做空操作")
+    # # 做空操作
+    # elif ( 35 <= rsi <= 45 ) and cci <= 0 and bid < middle and is_downtrend:
+    #     checkCurrentIsprofit()
+    #     open_order(symbol, lot_size, mt5.ORDER_TYPE_SELL, bid)
+    #     last_kline_time = current_kline_time
+    #     saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---middle:{middle}---is_downtrend:{is_downtrend}---布林带中轨，执行做空操作")
+    # # rsi指标在40 和65之间，检查收益
+    # elif (rsi >= 40 and rsi <= 65):
+    #     checkCurrentIsprofit(True,True)
+    #     print(f'is_downtrend:{is_downtrend},is_uptrend:{is_uptrend}')
+    #     print('rsi指标在40 和65之间，检查收益')
+    #     saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---bid:{bid}---upper:{upper}---lower:{lower}---检查收益")
     
