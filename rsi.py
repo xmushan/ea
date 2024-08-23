@@ -242,16 +242,16 @@ def main():
             saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---bid:{bid}---upper:{upper}---lower:{lower}---无信号")
     # 大趋势为下
     if (is_downtrend):
-        if (rsi >= 75 or cci >= 155 and bid > upper):
+        if ((rsi >= 75 or cci >= 180) and bid > upper):
             checkCurrentIsprofit()
             open_order(symbol, 0.03, mt5.ORDER_TYPE_SELL, bid)
             last_kline_time = current_kline_time
-            saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---lower:{lower}---rsi指标小于35，执行做多操作")
-        elif 55 <= rsi <= 70 and cci >= 100 and bid > middle:
+            saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---lower:{lower}---rsi大于75 或者 cci 大于180")
+        elif 55 <= rsi <= 70 and cci >= 100 and bid >= upper:
             checkCurrentIsprofit()
             open_order(symbol, 0.01, mt5.ORDER_TYPE_SELL, bid)
             last_kline_time = current_kline_time
-            saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---middle:{middle}---is_uptrend:{is_uptrend}---布林带中轨，执行做多操作")
+            saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---middle:{middle}---is_uptrend:{is_uptrend}---中轨做空")
         else:
             print('无信号')
             print(rsi,cci)
