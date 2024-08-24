@@ -1,18 +1,17 @@
 import MetaTrader5 as mt5
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta, timezone,time
+from datetime import datetime,time
 from config import login, server, password
-from cci import judegeOrder
 import time as timeSleep
-from log import saveLog
 from strategy import vibrate,tend
 import pytz
+from utils import checkCurrentIsprofit
 
 # 初始化MT5
 mt5.initialize()
 authorized = mt5.login(login=login, password=password, server=server)
-print(authorized)
+print('登录成功')
 if not authorized:
     print(f"Failed to login to MT5: {mt5.last_error()}")
     mt5.shutdown()
@@ -21,15 +20,11 @@ if not authorized:
 # symbol = "XAUUSDm"  # 交易符号
 # symbol = "XAUUSDc"  # 交易符号
 # symbol = "BTCUSDc"  # 交易符号
-symbol = "XAUUSDm"  # 交易符号
+symbol = "BTCUSDm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
 lot_size = 0.03  # 每次交易的手数
 bars = 100  # 获取最近100个柱数据
-slippage = 5  # 允许的价格滑点
-last_kline_time = None  # 用于存储上一次K线时间戳
-profit = 10 # 单比订单盈利额
-totalProfit = 30 # 总盈利额度
-retracement = -200 # 最大回撤
+
 
 # 获取当前价格
 def get_current_price(symbol):
@@ -78,6 +73,7 @@ def calculate_cci(data,period=14):
     last_cci = data['CCI'].iloc[-1]
     return last_cci
 
+
 # 计算布林带
 def CalculateBollingerBands(data): 
     df = pd.DataFrame(data)
@@ -88,88 +84,6 @@ def CalculateBollingerBands(data):
     bollingData = df[['close', 'SMA_20', 'Upper_Band', 'Lower_Band','open']].iloc[-1]
     return bollingData.Upper_Band,bollingData.Lower_Band,bollingData.SMA_20
 
-# 开仓函数
-def open_order(symbol, lot, order_type, price):
-    global last_kline_time
-    current_kline_time = get_current_kline_time(symbol, timeframe)
-    request = {
-        'action': mt5.TRADE_ACTION_DEAL,
-        'symbol': symbol,
-        'volume': lot,
-        'type': order_type,
-        'price': price,
-        'deviation': slippage,
-        'magic': 234000,
-        'type_time': mt5.ORDER_TIME_GTC,
-        'type_filling': mt5.ORDER_FILLING_IOC,
-    }
-    if (last_kline_time == current_kline_time):
-        checkCurrentIsprofit()
-        print('当前K线下过单')
-        return
-    result = mt5.order_send(request)
-    if result.retcode == 10009:
-        last_kline_time = current_kline_time
-        print('success')
-    else:
-        print(result)
-
-# 当前订单是否获得收益
-def checkCurrentIsprofit(flag = True,isAll = False):
-    orders = mt5.positions_get()
-    total = 0
-    if not orders:
-        return
-    orders_df = pd.DataFrame(list(orders), columns=orders[0]._asdict().keys())
-    filtered_orders_df = orders_df.loc[orders_df['symbol'] == symbol]
-    for index, order in filtered_orders_df.iterrows():
-        total = total + order['profit']
-    # 最大回撤金额
-    if (total < retracement):
-        for index, order in filtered_orders_df.iterrows():
-            set_protective_stop(order)
-        timeSleep.sleep(3600)
-        return
-    if (flag == False):
-        for index, order in filtered_orders_df.iterrows():
-            set_protective_stop(order)
-        return
-    if (isAll == True and total >= totalProfit):
-        for index, order in filtered_orders_df.iterrows():
-            set_protective_stop(order)
-        return
-    for index, order in filtered_orders_df.iterrows():
-        if order['profit'] >= profit:
-            set_protective_stop(order)
-
-def set_protective_stop(order):
-    symbol = order['symbol']
-    ticket = order['ticket']
-    order_type = order['type']
-    volume =order['volume']
-    close_type = mt5.ORDER_TYPE_SELL if order_type == mt5.ORDER_TYPE_BUY else mt5.ORDER_TYPE_BUY
-    request = {
-        'action': mt5.TRADE_ACTION_DEAL,
-        'symbol': symbol,
-        'volume': volume,
-        'type': close_type,
-        'position': ticket,
-        'comment': 'Close order',
-        "type_time": mt5.ORDER_TIME_GTC, # 订单到期类型
-        "type_filling": mt5.ORDER_FILLING_IOC, #订单成交类型
-    }
-    res =  mt5.order_send(request)
-    print(res)
-
-# 获取当前K线时间戳
-def get_current_kline_time(symbol, timeframe):
-    rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, bars)
-    if rates is None or len(rates) == 0:
-        print(f"Failed to get rates: {mt5.last_error()}")
-        return None
-    rates_frame = pd.DataFrame(rates)
-    utc_time = datetime.fromtimestamp(rates_frame['time'].iloc[-1], tz=timezone.utc)
-    return utc_time
 
 def is_within_business_hours(data,timezone_str='Asia/Shanghai'):
     global timeframe
@@ -187,24 +101,24 @@ def is_within_business_hours(data,timezone_str='Asia/Shanghai'):
     UsaopeEndTime = time(7, 0, 0)
     # 判断亚洲盘时间
     if asiaStartTime <= current_time <= asiaEndTime:
-        vibrate(data)
+        vibrate(data,symbol,0.02,timeframe)
         return
-    # 判断欧洲盘时间
+    # # 判断欧洲盘时间
     if EuropeStartTime <= current_time <= EuropeEndTime:
         timeframe = mt5.TIMEFRAME_M30
-        tend(data)
+        tend(data,symbol,timeframe)
         return
-    # 判断美盘时间（跨午夜）
+    # # 判断美盘时间（跨午夜）
     if (current_time >= UsaStartTime) or (current_time <= UsaopeEndTime):
         timeframe = mt5.TIMEFRAME_H1
-        tend(data)
+        tend(data,symbol,timeframe)
         return
 
 
 def main():
     positions_total=mt5.positions_total()
     if positions_total >= 5:
-        checkCurrentIsprofit(True,True)
+        checkCurrentIsprofit(symbol)
         print('已达当前最大订单量')
         return
     short_ma = calculate_ma(symbol, timeframe, 50)  # 50周期均线
@@ -225,6 +139,7 @@ def main():
         'shortMa': short_ma,
         'longMa': long_ma,
     }
+    print(indicatorData)
     is_within_business_hours(indicatorData)
 
 while True:
