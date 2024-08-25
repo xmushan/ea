@@ -45,7 +45,7 @@ def open_order(symbol, lot, order_type, price,timeframe):
         print(result)
 
 # 当前订单是否获得收益
-def checkCurrentIsprofit(symbol,retracement = -100,profit = 5,totalProfit = 10):
+def checkCurrentIsprofit(symbol,retracement = -60,profit = 5,totalProfit = 10):
     orders = mt5.positions_get()
     total = 0
     if not orders:

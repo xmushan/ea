@@ -105,13 +105,14 @@ def is_within_business_hours(data,timezone_str='Asia/Shanghai'):
         return
     # # 判断欧洲盘时间
     if EuropeStartTime <= current_time <= EuropeEndTime:
-        timeframe = mt5.TIMEFRAME_M30
-        tend(data,symbol,timeframe)
+        # timeframe = mt5.TIMEFRAME_M30
+        # tend(data,symbol,timeframe)
+        vibrate(data,symbol,0.02,timeframe)
         return
     # # 判断美盘时间（跨午夜）
     if (current_time >= UsaStartTime) or (current_time <= UsaopeEndTime):
-        timeframe = mt5.TIMEFRAME_H1
-        tend(data,symbol,timeframe)
+        # timeframe = mt5.TIMEFRAME_H1
+        vibrate(data,symbol,0.02,timeframe)
         return
 
 

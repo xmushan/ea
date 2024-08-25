@@ -13,7 +13,7 @@ def vibrate(indicatorData,symbol,lot_size,timeframe):
     ask = indicatorData['ask']
     bid = indicatorData['bid']
     # 买入条件：RSI和CCI处于超卖区，且价格低于下轨
-    if (rsi <= 30 and cci <= -200 and ask < lower):
+    if ((rsi <= 30 or cci <= -200) and ask < lower):
         checkCurrentIsprofit(symbol)
         open_order(symbol, lot_size, mt5.ORDER_TYPE_BUY, ask,timeframe)
         saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---middle:{middle}---做多")
@@ -28,10 +28,13 @@ def vibrate(indicatorData,symbol,lot_size,timeframe):
         open_order(symbol, lot_size, mt5.ORDER_TYPE_SELL, bid,timeframe)
         saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---middle:{middle}---做空")
      # 中轨卖出条件：RSI和CCI处于中性偏高区间，且价格高于上轨
-    elif (50 <= rsi <= 60 and cci >= 100 and bid >= upper):
+    elif (55 <= rsi <= 65 and cci >= 100 and bid >= upper):
         checkCurrentIsprofit(symbol)
         open_order(symbol, lot_size, mt5.ORDER_TYPE_SELL, bid,timeframe)
         saveLog(f"rsi:{rsi}---cci:{cci}---ask:{ask}---middle:{middle}---中轨做空")
+    elif (rsi <= 15 and ask < lower):
+        checkCurrentIsprofit(symbol)
+        open_order(symbol, 0.03, mt5.ORDER_TYPE_BUY, bid,timeframe)
     else:
         checkCurrentIsprofit(symbol)
         print('无信号，检查收益')
@@ -55,9 +58,12 @@ def tend(indicatorData,symbol,timeframe):
         if rsi <= 35 and cci <= -150 and ask < lower:
             checkCurrentIsprofit(symbol)
             open_order(symbol, 0.03, mt5.ORDER_TYPE_BUY, ask,timeframe)
-        elif 45 <= rsi <= 55 and cci <= -50 and ask < middle:
+        elif 45 <= rsi <= 55 and cci <= -50 and ask < lower:
             checkCurrentIsprofit(symbol)
-            open_order(symbol, 0.01, mt5.ORDER_TYPE_BUY, ask,timeframe)
+            open_order(symbol, 0.02, mt5.ORDER_TYPE_BUY, ask,timeframe)
+        elif rsi >= 80 and cci >= 300 and bid > upper:
+            checkCurrentIsprofit(symbol)
+            open_order(symbol, 0.03, mt5.ORDER_TYPE_SELL, bid,timeframe)
         else:
             print('无信号')
             print(rsi,cci)
@@ -72,7 +78,7 @@ def tend(indicatorData,symbol,timeframe):
             open_order(symbol, 0.03, mt5.ORDER_TYPE_SELL, bid,timeframe)
         elif 55 <= rsi <= 70 and cci >= 100 and bid >= upper:
             checkCurrentIsprofit(symbol)
-            open_order(symbol, 0.01, mt5.ORDER_TYPE_SELL, bid,timeframe)
+            open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid,timeframe)
         else:
             print('无信号')
             print(rsi,cci)
