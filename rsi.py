@@ -11,19 +11,21 @@ from utils import checkCurrentIsprofit
 # 初始化MT5
 mt5.initialize()
 authorized = mt5.login(login=login, password=password, server=server)
+
 print('登录成功')
 if not authorized:
     print(f"Failed to login to MT5: {mt5.last_error()}")
-    mt5.shutdown()
-    exit()
+    mt5.login(login=login, password=password, server=server)
+    # mt5.shutdown()
+    # exit()
 # symbol = "GOLD_"  # 交易符号
-# symbol = "XAUUSDm"  # 交易符号
+symbol = "XAUUSDm"  # 交易符号
 # symbol = "XAUUSDc"  # 交易符号
 # symbol = "BTCUSDc"  # 交易符号
-symbol = "BTCUSDm"  # 交易符号
+# symbol = "BTCUSDm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
 lot_size = 0.03  # 每次交易的手数
-bars = 100  # 获取最近100个柱数据
+bars = 500  # 获取最近100个柱数据
 
 
 # 获取当前价格
@@ -73,6 +75,15 @@ def calculate_cci(data,period=14):
     last_cci = data['CCI'].iloc[-1]
     return last_cci
 
+# 计算简单移动平均线
+def get_sma(data, sma_period):
+    # 计算简单移动平均线
+    data['sma'] = data['close'].rolling(window=sma_period).mean()
+    
+    # 返回最新一条SMA值
+    latest_sma = data['sma'].iloc[-1]
+    return latest_sma
+
 
 # 计算布林带
 def CalculateBollingerBands(data): 
@@ -111,7 +122,6 @@ def is_within_business_hours(data,timezone_str='Asia/Shanghai'):
         return
     # # 判断美盘时间（跨午夜）
     if (current_time >= UsaStartTime) or (current_time <= UsaopeEndTime):
-        # timeframe = mt5.TIMEFRAME_H1
         vibrate(data,symbol,0.02,timeframe)
         return
 
@@ -125,6 +135,8 @@ def main():
     short_ma = calculate_ma(symbol, timeframe, 50)  # 50周期均线
     long_ma = calculate_ma(symbol, timeframe, 200)  # 200周期均线
     data = get_historical_data(symbol, timeframe)
+    sma_short = get_sma(data, 14)
+    sma_long_ma = get_sma(data, 21)
     upper,lower,middle = CalculateBollingerBands(data)
     rsi = calculate_rsi(data,25)
     cci = calculate_cci(data,20)
@@ -137,6 +149,8 @@ def main():
         'middle': middle,
         'ask': ask,
         'bid': bid,
+        'sma_short': sma_short,
+        'sma_long_ma': sma_long_ma,
         'shortMa': short_ma,
         'longMa': long_ma,
     }
