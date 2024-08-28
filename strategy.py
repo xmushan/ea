@@ -43,6 +43,54 @@ from log import saveLog
 #         checkCurrentIsprofit(symbol)
 #         print('无信号，检查收益')
 
+def vibrate1 (indicatorData, symbol, lot_size, timeframe):
+    rsi = indicatorData['rsi']
+    cci = indicatorData['cci']
+    upper = indicatorData['upper']
+    lower = indicatorData['lower']
+    middle = indicatorData['middle']
+    ask = indicatorData['ask']
+    bid = indicatorData['bid']
+    sma_short = indicatorData['sma_short']
+    sma_long_ma = indicatorData['sma_long_ma']
+    is_uptrend = sma_short > sma_long_ma
+    is_downtrend = sma_short < sma_long_ma
+
+    sma_diff = abs(sma_short - sma_long_ma)
+
+    if (sma_diff <=1.5 ):
+        checkCurrentIsprofit(symbol)
+        print('无信号')
+        return
+    if (is_downtrend and sma_diff > 10 and ask > lower and rsi <= 35):
+        open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid, timeframe)
+        
+    if (bid > upper):
+        if (rsi >= 65):
+            checkCurrentIsprofit(symbol)
+            open_order(symbol, 0.01, mt5.ORDER_TYPE_SELL, bid, timeframe)
+        if (rsi >= 70):
+            checkCurrentIsprofit(symbol)
+            open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid, timeframe)
+        if (rsi >= 80):
+            checkCurrentIsprofit(symbol)
+            open_order(symbol, 0.03, mt5.ORDER_TYPE_SELL, bid, timeframe)
+    if (ask < lower):
+        if (rsi <= 35):
+            checkCurrentIsprofit(symbol)
+            open_order(symbol, 0.01, mt5.ORDER_TYPE_BUY, bid, timeframe)
+        if (rsi <= 30):
+            checkCurrentIsprofit(symbol)
+            open_order(symbol, 0.02, mt5.ORDER_TYPE_BUY, bid, timeframe)
+        if (rsi <= 20):
+            checkCurrentIsprofit(symbol)
+            open_order(symbol, 0.03, mt5.ORDER_TYPE_BUY, bid, timeframe)
+    
+            
+        
+
+
+
 
 def vibrate(indicatorData, symbol, lot_size, timeframe):
     rsi = indicatorData['rsi']
