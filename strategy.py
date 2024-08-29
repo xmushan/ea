@@ -62,9 +62,16 @@ def vibrate1 (indicatorData, symbol, lot_size, timeframe):
         checkCurrentIsprofit(symbol)
         print('无信号')
         return
-    if (is_downtrend and sma_diff > 10 and ask > lower and rsi <= 35):
-        open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid, timeframe)
-        
+
+    if ( 3 <= sma_diff <= 8 ):
+        # 单边上涨
+        if (is_uptrend and middle <= ask <= upper and 50 <= rsi <= 70):
+            open_order(symbol, 0.02, mt5.ORDER_TYPE_BUY, bid, timeframe)
+    
+        # 单边下跌
+        if (is_downtrend and middle >= bid >= upper and 50 >= rsi >= 30):
+            open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid, timeframe)
+
     if (bid > upper):
         if (rsi >= 65):
             checkCurrentIsprofit(symbol)
