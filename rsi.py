@@ -136,7 +136,7 @@ def main():
     long_ma = calculate_ma(symbol, timeframe, 200)  # 200周期均线
     data = get_historical_data(symbol, timeframe)
     sma_short = get_sma(data, 14)
-    sma_long_ma = get_sma(data, 21)
+    sma_long_ma = get_sma(data, 50)
     upper,lower,middle = CalculateBollingerBands(data)
     rsi = calculate_rsi(data,25)
     cci = calculate_cci(data,20)
