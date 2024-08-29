@@ -58,7 +58,7 @@ def vibrate1 (indicatorData, symbol, lot_size, timeframe):
 
     sma_diff = abs(sma_short - sma_long_ma)
 
-    if (sma_diff <=1.5 ):
+    if (sma_diff <= 2 ):
         checkCurrentIsprofit(symbol)
         print('无信号')
         return
