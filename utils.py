@@ -45,25 +45,18 @@ def open_order(symbol, lot, order_type, price,timeframe):
         print(result)
 
 # 当前订单是否获得收益
-def checkCurrentIsprofit(symbol,retracement = -60,profit = 5,totalProfit = 10):
+def checkCurrentIsprofit(symbol,retracement = -30,profit = 5):
     orders = mt5.positions_get()
-    total = 0
     if not orders:
         return
     orders_df = pd.DataFrame(list(orders), columns=orders[0]._asdict().keys())
     filtered_orders_df = orders_df.loc[orders_df['symbol'] == symbol]
     for index, order in filtered_orders_df.iterrows():
         total = total + order['profit']
-    # 最大回撤金额
-    if (total <= retracement):
-        for index, order in filtered_orders_df.iterrows():
+    # 单笔最大回撤金额
+    for index, order in filtered_orders_df.iterrows():
+        if (order['profit'] <= retracement):
             set_protective_stop(order)
-        timeSleep.sleep(3600)
-        return
-    if (total >= totalProfit):
-        for index, order in filtered_orders_df.iterrows():
-            set_protective_stop(order)
-        return
     for index, order in filtered_orders_df.iterrows():
         if order['profit'] >= profit:
             set_protective_stop(order)
