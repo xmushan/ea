@@ -1,102 +1,155 @@
-import MetaTrader5 as mt5
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
-from config import login, password, server
-import pytz
-# 配置MetaTrader 5登录信息（请根据需要修改）
-balance = 500
-timezone = pytz.timezone("Asia/Shanghai")
-# 初始化MetaTrader 5
-if not mt5.initialize():
-    print("initialize() failed, error code =", mt5.last_error())
-    quit()
 
-# 登录到MetaTrader 5账户
-if not mt5.login(login=login, password=password, server=server):
-    print("Failed to login to MT5:", mt5.last_error())
-    mt5.shutdown()
-    quit()
+def backtest_vibrate_strategy(data, initial_balance=500, lot_size=0.1, points_value=10):
+    balance = initial_balance
+    total_trades = 0
+    losing_trades = 0
+    max_drawdown = 0
+    peak_balance = initial_balance
+    open_trades = []  # 当前开仓的订单
+    open_price_history = []
+    time_history = []
+    buy_signals = []  # 记录买入信号的时间和价格
+    sell_signals = []  # 记录卖出信号的时间和价格
 
-print("Login successful")
+    for i in range(len(data)):
+        # 获取当前数据的指标
+        indicator_data = {
+            'rsi': data['rsi'].iloc[i],
+            'cci': data['CCI'].iloc[i],
+            'upper': data['Upper_Band'].iloc[i],
+            'lower': data['Lower_Band'].iloc[i],
+            'middle': data['SMA_20'].iloc[i],
+            'ask': data['open'].iloc[i],
+            'bid': data['high'].iloc[i],
+            'close': data['close'].iloc[i],
+            'sma_short': data['sma_short'].iloc[i],
+            'sma_long_ma': data['sma_long_ma'].iloc[i]
+        }
 
-# 设置交易品种和时间框架
-symbol = "XAUUSDm"  # 黄金的交易对
-timeframe = mt5.TIMEFRAME_M15  # 15分钟周期
-start_date = datetime(2024, 8, 9)
-end_date = datetime(2024, 8, 10)
+        # 检查当前开仓的订单是否满足平仓条件
+        closed_trades = []
+        for trade in open_trades:
+            action = trade['action']  # 使用订单中的action
+            if i < len(data) - 1:
+                next_open_price = data['open'].iloc[i + 1]
+                pnl = calculate_pnl(action, indicator_data, lot_size, points_value, next_open_price)
+                
+                # 判断是否达到平仓条件
+                if pnl > 10 or pnl < -50:
+                    balance += pnl
+                    closed_trades.append(trade)
+                    total_trades += 1
+                    if pnl < 0:
+                        losing_trades += 1
+                    # 更新最大回撤
+                    if balance > peak_balance:
+                        peak_balance = balance
+                    drawdown = peak_balance - balance
+                    if drawdown > max_drawdown:
+                        max_drawdown = drawdown
 
-# 获取历史数据
-def get_historical_data(symbol, timeframe, start_date, end_date):
-    # rates = mt5.copy_rates_range(symbol, timeframe, start_date, end_date)
-    utc_from = datetime(2024, 8, 10, tzinfo=timezone)
-    print(utc_from)
-    rates = mt5.copy_rates_from(symbol, timeframe, utc_from, 100)
-    if rates is None:
-        print(f"Failed to get rates: {mt5.last_error()}")
-        return None
-    rates_frame = pd.DataFrame(rates)
-    rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s')
-    rates_frame.set_index('time', inplace=True)
-    return rates_frame
+        # 移除已平仓的订单
+        open_trades = [trade for trade in open_trades if trade not in closed_trades]
 
-data = get_historical_data(symbol, timeframe, start_date, end_date)
+        # 判断是否下单，确保最大下单数量不超过5单
+        if len(open_trades) < 5:
+            action = determine_trade_action(indicator_data)
+            if action is not None:
+                open_trades.append({'action': action, 'entry_price': indicator_data['ask'] if action == 'buy' else indicator_data['bid']})
+                # 记录买入或卖出信号
+                if action == 'buy':
+                    buy_signals.append((data['time'].iloc[i], data['open'].iloc[i]))
+                elif action == 'sell':
+                    sell_signals.append((data['time'].iloc[i], data['open'].iloc[i]))
 
-# 计算移动平均线
-def calculate_moving_averages(data, short_window=5, long_window=20):
-    data['sma_short'] = data['close'].rolling(window=short_window, min_periods=1).mean()
-    data['sma_long'] = data['close'].rolling(window=long_window, min_periods=1).mean()
+        # 记录当前的开盘价和时间
+        open_price_history.append(data['open'].iloc[i])
+        time_history.append(data['time'].iloc[i])
 
-calculate_moving_averages(data)
-print(data)
-
-exit()
-# 回测函数
-def backtest(data, lot_size=1):
-    global balance
-    positions = 0
-    data['balance'] = balance
-    data['positions'] = positions
-    data['cash'] = balance
-    print(data)
-    for i in range(1, len(data)):
-        if i % 2 == 0:
-            # 买入信号
-            if True:
-                balance += 10
-        
-        # elif data['sma_short'].iloc[i] < data['sma_long'].iloc[i] and data['sma_short'].iloc[i-1] >= data['sma_long'].iloc[i-1]:
-        #     # 卖出信号
-        #     if positions > 0:
-        #         balance += positions * data['close'].iloc[i]
-        #         positions = 0
-        #         print(f"Sell at {data.index[i]}: balance = {balance}")
-        
-        data.loc[data.index[i], 'balance'] = balance
-        data.loc[data.index[i], 'positions'] = positions
-        data.loc[data.index[i], 'cash'] = balance + positions * data['close'].iloc[i]
-
-    return data
-
-# 执行回测
-data = get_historical_data(symbol, timeframe, start_date, end_date)
-if data is not None:
-    calculate_moving_averages(data)
-    result = backtest(data)
+    # 绘制开盘价曲线
+    plt.figure(figsize=(12, 8))
+    plt.plot(time_history, open_price_history, label='Open Price Over Time', color='orange')
     
-    # 绘制结果
-    plt.figure(figsize=(14, 7))
-    plt.plot(result.index, result['balance'], label='Account Balance', color='blue')
-    plt.title('Account Balance Over Time')
-    plt.xlabel('Date')
-    plt.gca().xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%m-%d %H:%M'))
-    plt.gca().xaxis.set_major_locator(plt.matplotlib.dates.HourLocator(interval=1))  # 每小时标记一次
-    plt.gcf().autofmt_xdate()  # 自动旋转日期标签
-    plt.ylabel('Balance')
-    plt.legend()
+    # 绘制买入信号
+    if buy_signals:
+        buy_times, buy_prices = zip(*buy_signals)
+        plt.scatter(buy_times, buy_prices, marker='^', color='green', label='Buy Signal', s=100)
+
+    # 绘制卖出信号
+    if sell_signals:
+        sell_times, sell_prices = zip(*sell_signals)
+        plt.scatter(sell_times, sell_prices, marker='v', color='red', label='Sell Signal', s=100)
+
+    plt.xlabel('Time')
+    plt.ylabel('Open Price')
+    plt.title('Open Price over Time with Trade Signals')
     plt.grid(True)
+    plt.legend()
+
+    # 创建表格数据
+    cell_text = [
+        ['Final Balance', f'{balance:.2f}'],
+        ['Total Trades', total_trades],
+        ['Losing Trades', losing_trades],
+        ['Max Drawdown', f'{max_drawdown:.2f}']
+    ]
+
+    # 在图上添加表格
+    plt.table(cellText=cell_text, colLabels=['Metric', 'Value'], loc='bottom', cellLoc='center', bbox=[0, -0.3, 1, 0.2])
+
+    plt.subplots_adjust(left=0.2, bottom=0.4)  # 调整图形和表格的布局
     plt.show()
 
-# 关闭MetaTrader 5连接
-mt5.shutdown()
+    return balance, open_price_history, time_history, total_trades, losing_trades, max_drawdown
+
+def determine_trade_action(indicator_data):
+    rsi = indicator_data['rsi']
+    cci = indicator_data['cci']
+    upper = indicator_data['upper']
+    lower = indicator_data['lower']
+    middle = indicator_data['middle']
+    ask = indicator_data['ask']
+    bid = indicator_data['bid']
+    sma_short = indicator_data['sma_short']
+    sma_long_ma = indicator_data['sma_long_ma']
+    is_uptrend = sma_short > sma_long_ma
+    is_downtrend = sma_short < sma_long_ma
+
+    if is_uptrend:
+        if (rsi >= 75 or cci >= 250) and bid > upper:
+            return 'sell'
+        elif (rsi <= 40 and cci <= -100 and ask < lower):
+            return 'buy'
+        elif 50 <= rsi <= 65 and cci >= 20 and ask < middle:
+            return 'buy'
+        elif (rsi <= 30 or cci <= -250) and ask < lower:
+            return 'buy'
+    elif is_downtrend:
+        if (rsi <= 30 or cci <= -250) and ask < lower:
+            return 'buy'
+        elif rsi <= 50 and cci <= -50 and ask > middle:
+            return 'sell'
+        elif (rsi >= 70 or cci >= 230) and bid > upper:
+            return 'sell'
+        elif (55 <= rsi <= 65 and cci >= 100 and bid >= upper):
+            return 'sell'
+    return None
+
+def calculate_pnl(action, indicator_data, lot_size, points_value, next_open_price):
+    if action == 'buy':
+        entry_price = indicator_data['ask']
+        exit_price = next_open_price  # 使用下一个K线的开盘价作为平仓价格
+        profit_points = exit_price - entry_price
+    elif action == 'sell':
+        entry_price = indicator_data['bid']
+        exit_price = next_open_price  # 使用下一个K线的开盘价作为平仓价格
+        profit_points = entry_price - exit_price
+    else:
+        profit_points = 0
+
+    pnl = profit_points * lot_size * points_value
+    return pnl

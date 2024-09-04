@@ -4,9 +4,11 @@ import numpy as np
 from datetime import datetime,time
 from config import login, server, password
 import time as timeSleep
-from strategy import vibrate,tend
+from strategy import vibrate,vibrateTest
 import pytz
+import pprint 
 from utils import checkCurrentIsprofit
+from test import backtest_vibrate_strategy
 
 # 初始化MT5
 mt5.initialize()
@@ -19,13 +21,13 @@ if not authorized:
     # mt5.shutdown()
     # exit()
 # symbol = "GOLD_"  # 交易符号
-symbol = "XAUUSDm"  # 交易符号
-# symbol = "XAUUSDc"  # 交易符号
+# symbol = "XAUUSDm"  # 交易符号
+symbol = "XAUUSDc"  # 交易符号
 # symbol = "BTCUSDc"  # 交易符号
 # symbol = "BTCUSDm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
 lot_size = 0.03  # 每次交易的手数
-bars = 500  # 获取最近100个柱数据
+bars = 100  # 获取最近100个柱数据
 
 
 # 获取当前价格
@@ -64,6 +66,7 @@ def calculate_rsi(data, period=14):
     avg_loss = loss.ewm(span=period, adjust=False).mean()
     rs = avg_gain / avg_loss
     rsi = 100 - (100 / (1 + rs))
+    data['rsi'] = rsi
     return rsi.iloc[-1]
 
 def calculate_cci(data,period=14):
@@ -73,27 +76,38 @@ def calculate_cci(data,period=14):
     data['Mean Deviation'] = data['TP'].rolling(window=period).apply(lambda x: np.mean(np.abs(x - np.mean(x))))
     data['CCI'] = (data['TP'] - data['SMA']) / (0.015 * data['Mean Deviation'])
     last_cci = data['CCI'].iloc[-1]
+    data['sma_short'] = data['close'].rolling(window=14).mean()
+    data['sma_long_ma'] = data['close'].rolling(window=21).mean()
     return last_cci
 
 # 计算简单移动平均线
 def get_sma(data, sma_period):
     # 计算简单移动平均线
     data['sma'] = data['close'].rolling(window=sma_period).mean()
-    
     # 返回最新一条SMA值
     latest_sma = data['sma'].iloc[-1]
     return latest_sma
 
 
-# 计算布林带
 def CalculateBollingerBands(data): 
     df = pd.DataFrame(data)
     df['SMA_20'] = df['close'].rolling(window=20).mean()
     df['STD_20'] = df['close'].rolling(window=20).std()
     df['Upper_Band'] = df['SMA_20'] + (df['STD_20'] * 2)
     df['Lower_Band'] = df['SMA_20'] - (df['STD_20'] * 2)
-    bollingData = df[['close', 'SMA_20', 'Upper_Band', 'Lower_Band','open']].iloc[-1]
-    return bollingData.Upper_Band,bollingData.Lower_Band,bollingData.SMA_20
+    
+    # 将布林带的三个值添加到数据框中作为新列
+    data['SMA_20'] = df['SMA_20']
+    data['Upper_Band'] = df['Upper_Band']
+    data['Lower_Band'] = df['Lower_Band']
+    
+    # 提取最后一行的布林带数据
+    last_row = df.iloc[-1]
+    upper_band = last_row['Upper_Band']
+    lower_band = last_row['Lower_Band']
+    sma_20 = last_row['SMA_20']
+    
+    return upper_band, lower_band, sma_20
 
 
 def is_within_business_hours(data,timezone_str='Asia/Shanghai'):
@@ -112,17 +126,18 @@ def is_within_business_hours(data,timezone_str='Asia/Shanghai'):
     UsaopeEndTime = time(7, 0, 0)
     # 判断亚洲盘时间
     if asiaStartTime <= current_time <= asiaEndTime:
-        vibrate(data,symbol,0.02,timeframe)
+        vibrate(data,symbol,0.03,timeframe)
         return
     # # 判断欧洲盘时间
     if EuropeStartTime <= current_time <= EuropeEndTime:
+        # checkCurrentIsprofit(symbol)
         # timeframe = mt5.TIMEFRAME_M30
-        # tend(data,symbol,timeframe)
-        vibrate(data,symbol,0.02,timeframe)
+        vibrate(data,symbol,0.01,timeframe)
         return
     # # 判断美盘时间（跨午夜）
     if (current_time >= UsaStartTime) or (current_time <= UsaopeEndTime):
-        vibrate(data,symbol,0.02,timeframe)
+        checkCurrentIsprofit(symbol)
+        vibrate(data,symbol,0.01,timeframe)
         return
 
 
@@ -138,7 +153,7 @@ def main():
     sma_short = get_sma(data, 14)
     sma_long_ma = get_sma(data, 50)
     upper,lower,middle = CalculateBollingerBands(data)
-    rsi = calculate_rsi(data,25)
+    rsi = calculate_rsi(data,20)
     cci = calculate_cci(data,20)
     bid, ask = get_current_price(symbol)
     indicatorData = {
@@ -154,6 +169,8 @@ def main():
         'shortMa': short_ma,
         'longMa': long_ma,
     }
+    # res =  backtest_vibrate_strategy(data)
+    # # print(res)
     print(indicatorData)
     is_within_business_hours(indicatorData)
 
