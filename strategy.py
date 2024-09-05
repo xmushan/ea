@@ -1,5 +1,5 @@
 import MetaTrader5 as mt5
-from utils import open_order,checkCurrentIsprofit
+from utils.utils import open_order,checkCurrentIsprofit
 from log import saveLog
 
 # 买价(Bid) – 卖价(Ask)
