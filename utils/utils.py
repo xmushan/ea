@@ -132,8 +132,6 @@ def checkCurrentIsprofit(symbol,retracement = -30,profit = 5):
         return
     orders_df = pd.DataFrame(list(orders), columns=orders[0]._asdict().keys())
     filtered_orders_df = orders_df.loc[orders_df['symbol'] == symbol]
-    for index, order in filtered_orders_df.iterrows():
-        total = total + order['profit']
     # 单笔最大回撤金额
     for index, order in filtered_orders_df.iterrows():
         if (order['profit'] <= retracement):

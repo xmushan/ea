@@ -1,9 +1,10 @@
 import MetaTrader5 as mt5
-from utils import get_historical_data,get_current_price,calculate_rsi,calculate_cci,get_current_kline_time,open_order,CalculateBollingerBands,checkCurrentIsprofit
+from utils.utils import get_historical_data,get_current_price,calculate_rsi,calculate_cci,get_current_kline_time,open_order,CalculateBollingerBands,checkCurrentIsprofit,get_sma
 
-symbol = "XAUUSDc"  # 交易符号
+# symbol = "XAUUSDc"  # 交易符号
+symbol = "XAUUSDm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
-
+retracement = -20
 
 def vibrate(indicatorData, symbol, timeframe):
     rsi = indicatorData['rsi']
@@ -15,32 +16,32 @@ def vibrate(indicatorData, symbol, timeframe):
     sma_short = indicatorData['sma_short']
     sma_long_ma = indicatorData['sma_long_ma']
     sma_diff = abs(sma_short - sma_long_ma)
-    if (sma_diff <= 3 ):
+    if (sma_diff <= 2 ):
         print('无信号')
         return
     # 判断趋势并进行顺势交易
     if (rsi >= 75 and cci >= 250) and bid > upper:
-        checkCurrentIsprofit(symbol)
+        checkCurrentIsprofit(symbol,retracement)
         open_order(symbol, 0.03, mt5.ORDER_TYPE_SELL, bid, timeframe)
-    elif (rsi <= 30 and cci <= -100 and ask < lower):
-        checkCurrentIsprofit(symbol)
+    elif (rsi <= 30 and cci <= -120 and ask < lower):
+        checkCurrentIsprofit(symbol,retracement)
         open_order(symbol, 0.02, mt5.ORDER_TYPE_BUY, ask, timeframe)
     elif (rsi <= 25 and cci <= -250) and ask < lower:
-        checkCurrentIsprofit(symbol)
+        checkCurrentIsprofit(symbol,retracement)
         open_order(symbol, 0.03, mt5.ORDER_TYPE_BUY, ask, timeframe)
     elif (rsi >= 65 and cci >= 200) and bid > upper:
-        checkCurrentIsprofit(symbol)
+        checkCurrentIsprofit(symbol,retracement)
         open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid, timeframe)
     elif (50 <= rsi <= 55):
-        checkCurrentIsprofit(symbol)
-        print("检查收益")
+        checkCurrentIsprofit(symbol,retracement)
+        print("glod检查收益")
     else:
-        print("无明确趋势")
+        print("gold无明确趋势",rsi,cci)
 
 def goldStrategy():
     positions_total=mt5.positions_total()
     if positions_total >= 5:
-        checkCurrentIsprofit(symbol)
+        checkCurrentIsprofit(symbol,retracement)
         print('已达当前最大订单量')
         return
     data = get_historical_data(symbol, timeframe)
@@ -48,13 +49,17 @@ def goldStrategy():
     rsi = calculate_rsi(data,20)
     cci = calculate_cci(data,20)
     bid, ask = get_current_price(symbol)
+    sma_short = get_sma(data, 14)
+    sma_long_ma = get_sma(data, 50)
     indicatorData = {
         'rsi': rsi,
         'cci': cci,
         'upper': upper,
         'lower': lower,
         'middle': middle,
+        'sma_short': sma_short,
+        'sma_long_ma': sma_long_ma,
         'ask': ask,
         'bid': bid,
     }
-    vibrate(indicatorData,symbol,timeframe,0.01)
+    vibrate(indicatorData,symbol,timeframe)
