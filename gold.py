@@ -39,11 +39,11 @@ def vibrate(indicatorData, symbol, timeframe):
         print("gold无明确趋势",rsi,cci)
 
 def goldStrategy():
-    positions_total=mt5.positions_total()
-    if positions_total >= 5:
-        checkCurrentIsprofit(symbol,retracement)
-        print('已达当前最大订单量')
-        return
+    # positions_total=mt5.positions_total()
+    # if positions_total >= 5:
+    #     checkCurrentIsprofit(symbol,retracement)
+    #     print('已达当前最大订单量')
+    #     return
     data = get_historical_data(symbol, timeframe)
     upper,lower,middle = CalculateBollingerBands(data)
     rsi = calculate_rsi(data,20)
