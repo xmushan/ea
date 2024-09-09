@@ -16,9 +16,9 @@ def vibrate(indicatorData, symbol, timeframe):
     sma_short = indicatorData['sma_short']
     sma_long_ma = indicatorData['sma_long_ma']
     sma_diff = abs(sma_short - sma_long_ma)
-    if (sma_diff <= 3 ):
-        print('无信号')
-        return
+    # if (sma_diff <= 3 ):
+    #     print('无信号')
+    #     return
     # 判断趋势并进行顺势交易
     if (rsi >= 75 and cci >= 250) and bid > upper:
         checkCurrentIsprofit(symbol,retracement)
