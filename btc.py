@@ -29,9 +29,10 @@ def vibrate(indicatorData, symbol, timeframe):
     elif (rsi <= 25 and cci <= -250) and ask < lower:
         checkCurrentIsprofit(symbol,retracement)
         open_order(symbol, 0.03, mt5.ORDER_TYPE_BUY, ask, timeframe)
-    elif (rsi >= 65 and cci >= 200) and bid > upper:
+    elif (rsi >= 70 and cci >= 200) and bid > upper:
         checkCurrentIsprofit(symbol,retracement)
         open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid, timeframe)
+        print(rsi,cci)
     elif (50 <= rsi <= 55):
         checkCurrentIsprofit(symbol,retracement)
         print("btc检查收益")
@@ -39,11 +40,11 @@ def vibrate(indicatorData, symbol, timeframe):
         print("btc无明确趋势",rsi,cci)
 
 def btcStrategy():
-    positions_total=mt5.positions_total()
-    if positions_total >= 5:
-        checkCurrentIsprofit(symbol,retracement)
-        print('已达当前最大订单量')
-        return
+    # positions_total=mt5.positions_total()
+    # if positions_total >= 5:
+    #     checkCurrentIsprofit(symbol,retracement)
+    #     print('已达当前最大订单量')
+    #     return
     data = get_historical_data(symbol, timeframe)
     upper,lower,middle = CalculateBollingerBands(data)
     rsi = calculate_rsi(data,20)
