@@ -29,7 +29,7 @@ def vibrate(indicatorData, symbol, timeframe):
     elif (rsi <= 25 and cci <= -250) and ask < lower:
         checkCurrentIsprofit(symbol,retracement)
         open_order(symbol, 0.03, mt5.ORDER_TYPE_BUY, ask, timeframe)
-    elif (rsi >= 70 and cci >= 200) and bid > upper:
+    elif (rsi >= 72 and cci >= 220) and bid > upper:
         checkCurrentIsprofit(symbol,retracement)
         open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid, timeframe)
         print(rsi,cci)
