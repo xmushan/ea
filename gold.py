@@ -6,6 +6,12 @@ symbol = "XAUUSDm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
 retracement = -13
 
+def callBack(order):
+    order_type = order['type']
+    bid, ask = get_current_price(symbol)
+    type = mt5.ORDER_TYPE_SELL if order_type == mt5.ORDER_TYPE_BUY else mt5.ORDER_TYPE_BUY
+    open_order(symbol, 0.02,type, bid, timeframe)
+
 def vibrate(indicatorData, symbol, timeframe):
     rsi = indicatorData['rsi']
     cci = indicatorData['cci']
@@ -21,22 +27,22 @@ def vibrate(indicatorData, symbol, timeframe):
     #     return
     # 判断趋势并进行顺势交易
     if (rsi >= 75 and cci >= 250) and bid > upper:
-        checkCurrentIsprofit(symbol,retracement)
+        checkCurrentIsprofit(symbol=symbol,retracement=retracement,onCallBack=callBack)
         open_order(symbol, 0.03, mt5.ORDER_TYPE_SELL, bid, timeframe)
     elif (rsi <= 30 and cci <= -120 and ask < lower):
-        checkCurrentIsprofit(symbol,retracement)
+        checkCurrentIsprofit(symbol=symbol,retracement=retracement,onCallBack=callBack)
         open_order(symbol, 0.02, mt5.ORDER_TYPE_BUY, ask, timeframe)
     elif (rsi <= 25 and cci <= -250) and ask < lower:
-        checkCurrentIsprofit(symbol,retracement)
+        checkCurrentIsprofit(symbol = symbol,retracement= retracement,onCallBack=callBack)
         open_order(symbol, 0.03, mt5.ORDER_TYPE_BUY, ask, timeframe)
     elif (rsi >= 70 and cci >= 200) and bid > upper:
-        checkCurrentIsprofit(symbol,retracement)
+        checkCurrentIsprofit(symbol=symbol,retracement=retracement,onCallBack=callBack)
         open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid, timeframe)
     elif (35 < rsi < 45):
-        checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='sell')
+        checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='sell',onCallBack=callBack)
         print("gold检查空单收益")
     elif (55 < rsi < 65):
-        checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='buy')
+        checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='buy',onCallBack=callBack)
         print("gold检查多单收益")
     else:
         print("gold无明确趋势",rsi,cci)

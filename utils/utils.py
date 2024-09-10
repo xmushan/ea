@@ -165,7 +165,7 @@ def checkCurrentIsprofit(symbol, retracement=-30, profit=5, order_type=None,onCa
         if order['profit'] <= retracement:
             set_protective_stop(order)
             if onCallBack: 
-                onCallBack()
+                onCallBack(order)
     for index, order in filtered_orders_df.iterrows():
         if order['profit'] >= profit:
             set_protective_stop(order)
