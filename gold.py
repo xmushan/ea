@@ -4,7 +4,7 @@ from utils.utils import get_historical_data,get_current_price,calculate_rsi,calc
 # symbol = "XAUUSDc"  # 交易符号
 symbol = "XAUUSDm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
-retracement = -20
+retracement = -13
 
 def vibrate(indicatorData, symbol, timeframe):
     rsi = indicatorData['rsi']
@@ -29,12 +29,15 @@ def vibrate(indicatorData, symbol, timeframe):
     elif (rsi <= 25 and cci <= -250) and ask < lower:
         checkCurrentIsprofit(symbol,retracement)
         open_order(symbol, 0.03, mt5.ORDER_TYPE_BUY, ask, timeframe)
-    elif (rsi >= 65 and cci >= 200) and bid > upper:
+    elif (rsi >= 70 and cci >= 200) and bid > upper:
         checkCurrentIsprofit(symbol,retracement)
         open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid, timeframe)
-    elif (50 <= rsi <= 55):
-        checkCurrentIsprofit(symbol,retracement)
-        print("glod检查收益")
+    elif (35 < rsi < 45):
+        checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='sell')
+        print("gold检查空单收益")
+    elif (55 < rsi < 65):
+        checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='buy')
+        print("gold检查多单收益")
     else:
         print("gold无明确趋势",rsi,cci)
 
