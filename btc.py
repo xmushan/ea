@@ -4,7 +4,7 @@ from utils.utils import get_sma,get_historical_data,get_current_price,calculate_
 # symbol = "BTCUSDc"  # 交易符号
 symbol = "BTCUSDm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
-retracement = -20
+retracement = -12
 
 def vibrate(indicatorData, symbol, timeframe):
     rsi = indicatorData['rsi']
