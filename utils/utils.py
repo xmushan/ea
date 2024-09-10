@@ -143,7 +143,7 @@ def CalculateBollingerBands(data):
 
 
 # 当前订单是否获得收益
-def checkCurrentIsprofit(symbol, retracement=-30, profit=5, order_type=None):
+def checkCurrentIsprofit(symbol, retracement=-30, profit=5, order_type=None,onCallBack = None):
     orders = mt5.positions_get()
     if not orders:
         return
@@ -164,6 +164,8 @@ def checkCurrentIsprofit(symbol, retracement=-30, profit=5, order_type=None):
     for index, order in filtered_orders_df.iterrows():
         if order['profit'] <= retracement:
             set_protective_stop(order)
+            if onCallBack: 
+                onCallBack()
     for index, order in filtered_orders_df.iterrows():
         if order['profit'] >= profit:
             set_protective_stop(order)
