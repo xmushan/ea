@@ -36,7 +36,7 @@ def vibrate(indicatorData, symbol, timeframe):
     elif (35 < rsi < 45):
         checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='sell')
         print("btc检查空单收益")
-    elif (60 < rsi < 70):
+    elif (55 < rsi < 65):
         checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='buy')
         print("btc检查多单收益")
     else:
