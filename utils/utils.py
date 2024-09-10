@@ -126,19 +126,48 @@ def CalculateBollingerBands(data):
     return upper_band, lower_band, sma_20
 
 # 当前订单是否获得收益
-def checkCurrentIsprofit(symbol,retracement = -30,profit = 5):
+# def checkCurrentIsprofit(symbol,retracement = -30,profit = 5):
+#     orders = mt5.positions_get()
+#     if not orders:
+#         return
+#     orders_df = pd.DataFrame(list(orders), columns=orders[0]._asdict().keys())
+#     filtered_orders_df = orders_df.loc[orders_df['symbol'] == symbol]
+#     # 单笔最大回撤金额
+#     for index, order in filtered_orders_df.iterrows():
+#         if (order['profit'] <= retracement):
+#             set_protective_stop(order)
+#     for index, order in filtered_orders_df.iterrows():
+#         if order['profit'] >= profit:
+#             set_protective_stop(order)
+
+
+
+# 当前订单是否获得收益
+def checkCurrentIsprofit(symbol, retracement=-30, profit=5, order_type=None):
     orders = mt5.positions_get()
     if not orders:
         return
     orders_df = pd.DataFrame(list(orders), columns=orders[0]._asdict().keys())
-    filtered_orders_df = orders_df.loc[orders_df['symbol'] == symbol]
+    filtered_orders_df = orders_df[orders_df['symbol'] == symbol]
+    if order_type:
+        # 过滤多单或空单
+        if order_type == 'buy':
+            filtered_orders_df = filtered_orders_df[filtered_orders_df['type'] == mt5.ORDER_BUY]
+        elif order_type == 'sell':
+            filtered_orders_df = filtered_orders_df[filtered_orders_df['type'] == mt5.ORDER_SELL]
+        else:
+            return
+    if filtered_orders_df.empty:
+        print("No matching orders found.")
+        return
     # 单笔最大回撤金额
     for index, order in filtered_orders_df.iterrows():
-        if (order['profit'] <= retracement):
+        if order['profit'] <= retracement:
             set_protective_stop(order)
     for index, order in filtered_orders_df.iterrows():
         if order['profit'] >= profit:
             set_protective_stop(order)
+
 
 def set_protective_stop(order):
     symbol = order['symbol']
