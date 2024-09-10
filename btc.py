@@ -33,9 +33,12 @@ def vibrate(indicatorData, symbol, timeframe):
         checkCurrentIsprofit(symbol,retracement)
         open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid, timeframe)
         print(rsi,cci)
-    elif (50 <= rsi <= 55):
-        checkCurrentIsprofit(symbol,retracement)
-        print("btc检查收益")
+    elif (35 < rsi < 45):
+        checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='sell')
+        print("btc检查空单收益")
+    elif (60 < rsi < 70):
+        checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='buy')
+        print("btc检查多单收益")
     else:
         print("btc无明确趋势",rsi,cci)
 
