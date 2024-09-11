@@ -162,14 +162,14 @@ def checkCurrentIsprofit(symbol, retracement=-10, profit=5, order_type=None,onCa
         print("没有符合订单")
     # 单笔最大回撤金额
     for index, order in orders_df[orders_df['symbol'] == symbol].iterrows():
-        print(retracement)
         if order['profit'] <= retracement:
             set_protective_stop(order)
             if onCallBack: 
                 onCallBack(order)
-    for index, order in filtered_orders_df.iterrows():
-        if order['profit'] >= profit:
-            set_protective_stop(order)
+    if (onCallBack == None):
+        for index, order in filtered_orders_df.iterrows():
+            if order['profit'] >= profit:
+                set_protective_stop(order)
 
 
 def set_protective_stop(order):

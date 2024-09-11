@@ -4,15 +4,27 @@ from utils.utils import get_sma,get_historical_data,get_current_price,calculate_
 # symbol = "BTCUSDc"  # 交易符号
 symbol = "BTCUSDm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
-retracement = -12
+retracement = -18
 
 
 def callBack(order):
-    symbol = order['symbol']
     order_type = order['type']
     bid, ask = get_current_price(symbol)
-    type = mt5.ORDER_TYPE_SELL if order_type == mt5.ORDER_TYPE_BUY else mt5.ORDER_TYPE_BUY
-    open_order(symbol, 0.02,type, bid, timeframe)
+    request = {
+        'action': mt5.TRADE_ACTION_DEAL,
+        'symbol': symbol,
+        'type': order_type,
+        'volume': 0.02,
+        'price': bid,
+        'magic': 234000,
+        'type_time': mt5.ORDER_TIME_GTC,
+        'type_filling': mt5.ORDER_FILLING_IOC,
+    }
+    result = mt5.order_send(request)
+    if result.retcode == 10009:
+        print('success')
+    else:
+        print(result)
 
 
 
@@ -31,34 +43,31 @@ def vibrate(indicatorData, symbol, timeframe):
     #     print('无信号')
     #     return
     # 判断趋势并进行顺势交易
+    checkCurrentIsprofit(symbol=symbol,retracement=retracement,onCallBack=callBack)
     if (rsi >= 75 and cci >= 250) and bid > upper:
-        checkCurrentIsprofit(symbol = symbol,retracement=retracement,onCallBack=callBack)
+        checkCurrentIsprofit(symbol = symbol,retracement=retracement)
         open_order(symbol, 0.03, mt5.ORDER_TYPE_SELL, bid, timeframe)
     elif (rsi <= 30 and cci <= -150 and ask < lower):
-        checkCurrentIsprofit(symbol=symbol,retracement=retracement,onCallBack=callBack)
+        checkCurrentIsprofit(symbol=symbol,retracement=retracement)
         open_order(symbol, 0.02, mt5.ORDER_TYPE_BUY, ask, timeframe)
     elif (rsi <= 25 and cci <= -250) and ask < lower:
-        checkCurrentIsprofit(symbol=symbol,retracement=retracement,onCallBack=callBack)
+        checkCurrentIsprofit(symbol=symbol,retracement=retracement)
         open_order(symbol, 0.03, mt5.ORDER_TYPE_BUY, ask, timeframe)
     elif (rsi >= 72 and cci >= 220) and bid > upper:
-        checkCurrentIsprofit(symbol=symbol,retracement=retracement,onCallBack=callBack)
+        checkCurrentIsprofit(symbol=symbol,retracement=retracement)
         open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid, timeframe)
         print(rsi,cci)
-    elif (35 < rsi < 45):
-        checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='sell',onCallBack=callBack)
+    elif (cci <= 0):
+        checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='sell')
         print("btc检查空单收益")
-    elif (55 < rsi < 65):
-        checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='buy',onCallBack=callBack)
+    elif (cci >= 50):
+        checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='buy')
         print("btc检查多单收益")
     else:
+        checkCurrentIsprofit(symbol = symbol,retracement = retracement,profit=5)
         print("btc无明确趋势",rsi,cci)
 
 def btcStrategy():
-    # positions_total=mt5.positions_total()
-    # if positions_total >= 5:
-    #     checkCurrentIsprofit(symbol,retracement)
-    #     print('已达当前最大订单量')
-    #     return
     data = get_historical_data(symbol, timeframe)
     upper,lower,middle = CalculateBollingerBands(data)
     rsi = calculate_rsi(data,20)
