@@ -81,8 +81,6 @@ def get_sma(data, sma_period):
 
 # 开仓函数
 def open_order(symbol, lot, order_type, price,timeframe):
-    global last_kline_time
-    current_kline_time = get_current_kline_time(symbol, timeframe)
     request = {
         'action': mt5.TRADE_ACTION_DEAL,
         'symbol': symbol,
@@ -94,12 +92,8 @@ def open_order(symbol, lot, order_type, price,timeframe):
         'type_time': mt5.ORDER_TIME_GTC,
         'type_filling': mt5.ORDER_FILLING_IOC,
     }
-    if (last_kline_time == current_kline_time):
-        print('当前K线下过单')
-        return
     result = mt5.order_send(request)
     if result.retcode == 10009:
-        last_kline_time = current_kline_time
         print('success')
     else:
         print(result)

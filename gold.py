@@ -5,6 +5,7 @@ from utils.utils import get_historical_data,get_current_price,calculate_rsi,calc
 symbol = "XAUUSDm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
 retracement = -18
+last_kline_time = None  # 用于存储上一次K线时间戳
 
 def callBack(order):
     order_type = order['type']
@@ -35,9 +36,12 @@ def vibrate(indicatorData, symbol, timeframe):
     sma_short = indicatorData['sma_short']
     sma_long_ma = indicatorData['sma_long_ma']
     sma_diff = abs(sma_short - sma_long_ma)
-    # if (sma_diff <= 2 ):
-    #     print('无信号')
-    #     return
+    global last_kline_time
+    current_kline_time = get_current_kline_time(symbol, timeframe)
+    if (last_kline_time == current_kline_time):
+        checkCurrentIsprofit(symbol = symbol,retracement = retracement,profit=5)
+        print('当前K线下过单')
+        return
     checkCurrentIsprofit(symbol=symbol,retracement=retracement,onCallBack=callBack)
     # 判断趋势并进行顺势交易
     if (rsi >= 75 and cci >= 250) and bid > upper:

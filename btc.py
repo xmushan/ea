@@ -5,7 +5,7 @@ from utils.utils import get_sma,get_historical_data,get_current_price,calculate_
 symbol = "BTCUSDm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
 retracement = -18
-
+last_kline_time = None  # 用于存储上一次K线时间戳
 
 def callBack(order):
     order_type = order['type']
@@ -39,6 +39,12 @@ def vibrate(indicatorData, symbol, timeframe):
     sma_short = indicatorData['sma_short']
     sma_long_ma = indicatorData['sma_long_ma']
     sma_diff = abs(sma_short - sma_long_ma)
+    global last_kline_time
+    current_kline_time = get_current_kline_time(symbol, timeframe)
+    if (last_kline_time == current_kline_time):
+        checkCurrentIsprofit(symbol = symbol,retracement = retracement,profit=5)
+        print('当前K线下过单')
+        return
     # if (sma_diff <= 3 ):
     #     print('无信号')
     #     return
@@ -47,15 +53,19 @@ def vibrate(indicatorData, symbol, timeframe):
     if (rsi >= 75 and cci >= 250) and bid > upper:
         checkCurrentIsprofit(symbol = symbol,retracement=retracement)
         open_order(symbol, 0.03, mt5.ORDER_TYPE_SELL, bid, timeframe)
+        last_kline_time = current_kline_time
     elif (rsi <= 30 and cci <= -150 and ask < lower):
         checkCurrentIsprofit(symbol=symbol,retracement=retracement)
         open_order(symbol, 0.02, mt5.ORDER_TYPE_BUY, ask, timeframe)
+        last_kline_time = current_kline_time
     elif (rsi <= 25 and cci <= -250) and ask < lower:
         checkCurrentIsprofit(symbol=symbol,retracement=retracement)
         open_order(symbol, 0.03, mt5.ORDER_TYPE_BUY, ask, timeframe)
+        last_kline_time = current_kline_time
     elif (rsi >= 72 and cci >= 220) and bid > upper:
         checkCurrentIsprofit(symbol=symbol,retracement=retracement)
         open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid, timeframe)
+        last_kline_time = current_kline_time
         print(rsi,cci)
     elif (cci <= 0):
         checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='sell')
