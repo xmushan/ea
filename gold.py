@@ -4,7 +4,7 @@ from utils.utils import get_historical_data,get_current_price,calculate_rsi,calc
 # symbol = "XAUUSDc"  # 交易符号
 symbol = "XAUUSDm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
-retracement = -18
+retracement = -15
 last_kline_time = None  # 用于存储上一次K线时间戳
 
 def callBack(order):
@@ -47,15 +47,19 @@ def vibrate(indicatorData, symbol, timeframe):
     if (rsi >= 75 and cci >= 250) and bid > upper:
         checkCurrentIsprofit(symbol=symbol,retracement=retracement)
         open_order(symbol, 0.03, mt5.ORDER_TYPE_SELL, bid, timeframe)
+        last_kline_time = current_kline_time
     elif (rsi <= 30 and cci <= -120 and ask < lower):
         checkCurrentIsprofit(symbol=symbol,retracement=retracement)
         open_order(symbol, 0.02, mt5.ORDER_TYPE_BUY, ask, timeframe)
+        last_kline_time = current_kline_time
     elif (rsi <= 25 and cci <= -250) and ask < lower:
         checkCurrentIsprofit(symbol = symbol,retracement= retracement)
         open_order(symbol, 0.03, mt5.ORDER_TYPE_BUY, ask, timeframe)
+        last_kline_time = current_kline_time
     elif (rsi >= 70 and cci >= 200) and bid > upper:
         checkCurrentIsprofit(symbol=symbol,retracement=retracement)
         open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid, timeframe)
+        last_kline_time = current_kline_time
     elif (cci <= 0):
         checkCurrentIsprofit(symbol = symbol,retracement = retracement,order_type='sell')
         print("gold检查空单收益")

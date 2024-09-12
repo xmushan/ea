@@ -4,7 +4,7 @@ from utils.utils import get_sma,get_historical_data,get_current_price,calculate_
 # symbol = "BTCUSDc"  # 交易符号
 symbol = "BTCUSDm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
-retracement = -18
+retracement = -15
 last_kline_time = None  # 用于存储上一次K线时间戳
 
 def callBack(order):
