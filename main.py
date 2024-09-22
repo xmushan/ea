@@ -1,6 +1,7 @@
 import MetaTrader5 as mt5
 from datetime import datetime,time
 from config import login, server, password
+from utils.utils import checkAllIsprofit
 import time as timeSleep
 import pytz
 from gold import goldStrategy
@@ -27,7 +28,7 @@ def is_within_business_hours(timezone_str='Asia/Shanghai'):
     asiaEndTime = time(15, 30, 0)
     # 欧洲盘时间
     EuropeStartTime = time(15, 30, 0)
-    EuropeEndTime = time(20, 30, 0)
+    EuropeEndTime = time(19, 30, 0)
     # 美盘时间
     UsaStartTime = time(20, 30, 0)
     UsaopeEndTime = time(7, 0, 0)
@@ -43,8 +44,10 @@ def is_within_business_hours(timezone_str='Asia/Shanghai'):
         return
     # # 判断美盘时间（跨午夜）
     if (current_time >= UsaStartTime) or (current_time <= UsaopeEndTime):
-        goldStrategy()
-        btcStrategy()
+        print('美盘时间，不做单')
+        # goldStrategy()
+        # btcStrategy()
+        checkAllIsprofit()
         return
 
 

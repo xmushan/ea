@@ -8,6 +8,7 @@ import time as timeSleep
 slippage = 5  # 允许的价格滑点
 last_kline_time = None  # 用于存储上一次K线时间戳
 bars = 100
+lossAcount = 0 # 亏损次数
 
 # 获取历史数据
 def get_historical_data(symbol, timeframe):
@@ -120,20 +121,18 @@ def CalculateBollingerBands(data):
     return upper_band, lower_band, sma_20
 
 # 当前订单是否获得收益
-# def checkCurrentIsprofit(symbol,retracement = -30,profit = 5,order_type=None,onCallBack = None):
-#     orders = mt5.positions_get()
-#     if not orders:
-#         return
-#     orders_df = pd.DataFrame(list(orders), columns=orders[0]._asdict().keys())
-#     filtered_orders_df = orders_df.loc[orders_df['symbol'] == symbol]
-#     print(orders_df.loc[orders_df['symbol'] == symbol],'filtered_orders_df')
-#     # 单笔最大回撤金额
-#     for index, order in filtered_orders_df.iterrows():
-#         if (order['profit'] <= retracement):
-#             set_protective_stop(order)
-#     for index, order in filtered_orders_df.iterrows():
-#         if order['profit'] >= profit:
-#             set_protective_stop(order)
+def checkAllIsprofit(retracement = -15,profit = 5):
+    orders = mt5.positions_get()
+    if not orders:
+        return
+    orders_df = pd.DataFrame(list(orders), columns=orders[0]._asdict().keys())
+    # 单笔最大回撤金额
+    for index, order in orders_df.iterrows():
+        if (order['profit'] <= retracement):
+            set_protective_stop(order)
+    for index, order in orders_df.iterrows():
+        if order['profit'] >= profit:
+            set_protective_stop(order)
 
 
 
