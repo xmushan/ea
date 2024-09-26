@@ -66,6 +66,58 @@ def vibrate(indicatorData, symbol, timeframe):
         checkCurrentIsprofit(symbol = symbol,retracement = retracement,profit=5)
         print("gold无明确趋势",rsi,cci)
 
+
+def vibrate1(indicatorData, symbol, timeframe):
+    rsi = indicatorData['rsi']
+    cci = indicatorData['cci']
+    upper = indicatorData['upper']
+    lower = indicatorData['lower']
+    ask = indicatorData['ask']
+    bid = indicatorData['bid']
+    sma_short = indicatorData['sma_short']
+    sma_long_ma = indicatorData['sma_long_ma']
+    sma_diff = abs(sma_short - sma_long_ma)
+    global last_kline_time
+    current_kline_time = get_current_kline_time(symbol, timeframe)
+    
+    if (last_kline_time == current_kline_time):
+        checkCurrentIsprofit(symbol = symbol,retracement = retracement,profit=5)
+        print('当前K线下过单')
+        return
+    # 当前订单被止损之后，继续追加下单
+    checkCurrentIsprofit(symbol=symbol,retracement=retracement,onCallBack=callBack)
+
+    # 多
+    if ((28 <= rsi <= 30) and (-150 <= cci <=  -145)):
+        checkCurrentIsprofit(symbol = symbol,retracement=retracement)
+        open_order(symbol, 0.02, mt5.ORDER_TYPE_BUY, bid, timeframe)
+        last_kline_time = current_kline_time
+    if ((22 <= rsi <= 25) and (-200 <= cci <=  -195)):
+        checkCurrentIsprofit(symbol = symbol,retracement=retracement)
+        open_order(symbol, 0.03, mt5.ORDER_TYPE_BUY, bid, timeframe)
+        last_kline_time = current_kline_time
+    if ((15 <= rsi <= 20) and (-280 <= cci <=  -260)):
+        checkCurrentIsprofit(symbol = symbol,retracement=retracement)
+        open_order(symbol, 0.04, mt5.ORDER_TYPE_BUY, bid, timeframe)
+        last_kline_time = current_kline_time
+
+    # 空
+    if ((70 <= rsi <= 72) and (200 <= cci <= 220)):
+        checkCurrentIsprofit(symbol = symbol,retracement=retracement)
+        open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid, timeframe)
+        last_kline_time = current_kline_time
+    if ((80 <= rsi <= 82) and (250 <= cci <= 260)):
+        checkCurrentIsprofit(symbol = symbol,retracement=retracement)
+        open_order(symbol, 0.03, mt5.ORDER_TYPE_SELL, bid, timeframe)
+        last_kline_time = current_kline_time
+    if ((85 <= rsi) and (280 <= cci)):
+        checkCurrentIsprofit(symbol = symbol,retracement=retracement)
+        open_order(symbol, 0.04, mt5.ORDER_TYPE_SELL, bid, timeframe)
+        last_kline_time = current_kline_time
+    else:
+        checkCurrentIsprofit(symbol = symbol,retracement = retracement,profit=5)
+        print("gold无明确趋势",rsi,cci)       
+
 def goldStrategy():
     data = get_historical_data(symbol, timeframe)
     upper,lower,middle = CalculateBollingerBands(data)
@@ -85,4 +137,5 @@ def goldStrategy():
         'ask': ask,
         'bid': bid,
     }
-    vibrate(indicatorData,symbol,timeframe)
+    vibrate1(indicatorData,symbol,timeframe)
+
