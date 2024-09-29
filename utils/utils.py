@@ -151,8 +151,8 @@ def checkCurrentIsprofit(symbol, retracement=-10, profit=5, order_type=None,onCa
             filtered_orders_df = filtered_orders_df[filtered_orders_df['type'] == mt5.ORDER_TYPE_SELL]
         else:
             return
-    if filtered_orders_df.empty:
-        print("没有符合订单")
+    # if filtered_orders_df.empty:
+    #     print("没有符合订单")
     # 单笔最大回撤金额
     for index, order in orders_df[orders_df['symbol'] == symbol].iterrows():
         if order['profit'] <= retracement:

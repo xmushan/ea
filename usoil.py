@@ -2,7 +2,7 @@ import MetaTrader5 as mt5
 from utils.utils import get_sma,get_historical_data,get_current_price,calculate_rsi,calculate_cci,get_current_kline_time,open_order,CalculateBollingerBands,checkCurrentIsprofit
 
 # symbol = "BTCUSDc"  # 交易符号
-symbol = "BTCUSDm"  # 交易符号
+symbol = "USOILm"  # 交易符号
 timeframe = mt5.TIMEFRAME_M15  # 时间框架
 retracement = -15
 last_kline_time = None  # 用于存储上一次K线时间戳
@@ -27,7 +27,7 @@ def callBack(order):
         print(result)
 
 
-def vibrate1(indicatorData, symbol, timeframe):
+def vibrate(indicatorData, symbol, timeframe):
     rsi = indicatorData['rsi']
     cci = indicatorData['cci']
     upper = indicatorData['upper']
@@ -36,7 +36,6 @@ def vibrate1(indicatorData, symbol, timeframe):
     bid = indicatorData['bid']
     sma_short = indicatorData['sma_short']
     sma_long_ma = indicatorData['sma_long_ma']
-    daysRsi = indicatorData['daysRsi']
     sma_diff = abs(sma_short - sma_long_ma)
     global last_kline_time
     current_kline_time = get_current_kline_time(symbol, timeframe)
@@ -49,7 +48,7 @@ def vibrate1(indicatorData, symbol, timeframe):
     checkCurrentIsprofit(symbol=symbol,retracement=retracement,onCallBack=callBack)
 
     # 多
-    if (bid <= lower and daysRsi <= 40):
+    if (bid <= lower):
         if ((28 <= rsi <= 30) or (-150 <= cci <=  -145)):
             checkCurrentIsprofit(symbol = symbol,retracement=retracement)
             open_order(symbol, 0.02, mt5.ORDER_TYPE_BUY, bid, timeframe)
@@ -79,75 +78,16 @@ def vibrate1(indicatorData, symbol, timeframe):
             last_kline_time = current_kline_time
     else:
         checkCurrentIsprofit(symbol = symbol,retracement = retracement,profit=5)
-        print("btc无明确趋势",rsi,cci)
+        print("usoil无明确趋势",rsi,cci)
 
-
-def vibrate2(indicatorData, symbol, timeframe):
-    rsi = indicatorData['rsi']
-    cci = indicatorData['cci']
-    upper = indicatorData['upper']
-    lower = indicatorData['lower']
-    ask = indicatorData['ask']
-    bid = indicatorData['bid']
-    sma_short = indicatorData['sma_short']
-    sma_long_ma = indicatorData['sma_long_ma']
-    daysRsi = indicatorData['daysRsi']
-    global last_kline_time
-    current_kline_time = get_current_kline_time(symbol, timeframe)
-    
-    if last_kline_time == current_kline_time:
-        checkCurrentIsprofit(symbol=symbol, retracement=retracement, profit=10)
-        print('当前K线下过单')
-        return
-
-    # 当前订单被止损之后，继续追加下单
-    checkCurrentIsprofit(symbol=symbol, retracement=retracement, onCallBack=callBack)
-
-    # 逢低做多条件
-    if ask < lower and (rsi <= 30 or cci <= -200) and daysRsi < 45:
-        checkCurrentIsprofit(symbol=symbol, retracement=retracement)
-        open_order(symbol, 0.03, mt5.ORDER_TYPE_BUY, ask, timeframe)
-        last_kline_time = current_kline_time
-        print(f"逢低做多: ask={ask}, rsi={rsi}, cci={cci}")
-
-    # 增强逢低做多条件
-    elif ask < lower and (40 <= rsi <= 50 and cci <= -150) and daysRsi < 45:
-        checkCurrentIsprofit(symbol=symbol, retracement=retracement)
-        open_order(symbol, 0.02, mt5.ORDER_TYPE_BUY, ask, timeframe)
-        last_kline_time = current_kline_time
-        print(f"增强逢低做多: ask={ask}, rsi={rsi}, cci={cci}")
-
-    # 逢高做空条件
-    if bid > upper and (rsi >= 75 or cci >= 200) and daysRsi > 65:
-        checkCurrentIsprofit(symbol=symbol, retracement=retracement)
-        open_order(symbol, 0.03, mt5.ORDER_TYPE_SELL, bid, timeframe)
-        last_kline_time = current_kline_time
-        print(f"逢低做多: ask={ask}, rsi={rsi}, cci={cci}")
-
-    # 增强逢高做空条件
-    elif bid > upper and (65 <= rsi <= 70 and cci >= 150) and daysRsi > 65:
-        checkCurrentIsprofit(symbol=symbol, retracement=retracement)
-        open_order(symbol, 0.02, mt5.ORDER_TYPE_SELL, bid, timeframe)
-        last_kline_time = current_kline_time
-        print(f"增强逢低做多: ask={ask}, rsi={rsi}, cci={cci}")
-
-
-    else:
-        checkCurrentIsprofit(symbol=symbol, retracement=retracement, profit=10)
-        print("gold无明确做多信号", rsi, cci)
-
-def btcStrategy():
+def usoil():
     data = get_historical_data(symbol, timeframe)
-    # 获取一天的数据
-    daysData = get_historical_data(symbol,mt5.TIMEFRAME_D1 )
     upper,lower,middle = CalculateBollingerBands(data)
     rsi = calculate_rsi(data,20)
-    daysRsi = calculate_rsi(daysData,20)
     cci = calculate_cci(data,20)
     bid, ask = get_current_price(symbol)
     sma_short = get_sma(data, 14)
     sma_long_ma = get_sma(data, 50)
-    
     indicatorData = {
         'rsi': rsi,
         'cci': cci,
@@ -158,11 +98,5 @@ def btcStrategy():
         'sma_long_ma': sma_long_ma,
         'ask': ask,
         'bid': bid,
-        'daysRsi': daysRsi
     }
-    if (daysRsi >= 65 or daysRsi <= 40):
-        vibrate2(indicatorData,symbol,timeframe)
-    else:
-       vibrate1(indicatorData,symbol,timeframe)
-    
-
+    vibrate(indicatorData,symbol,timeframe)

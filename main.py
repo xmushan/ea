@@ -6,6 +6,7 @@ import time as timeSleep
 import pytz
 from gold import goldStrategy
 from btc import btcStrategy
+from usoil import usoil
 
 # 初始化MT5
 mt5.initialize()
@@ -36,17 +37,20 @@ def is_within_business_hours(timezone_str='Asia/Shanghai'):
     if asiaStartTime <= current_time <= asiaEndTime:
         goldStrategy()
         btcStrategy()
+        usoil()
         return
     # # 判断欧洲盘时间
     if EuropeStartTime <= current_time <= EuropeEndTime:
         goldStrategy()
         btcStrategy()
+        usoil()
         return
     # # 判断美盘时间（跨午夜）
     if (current_time >= UsaStartTime) or (current_time <= UsaopeEndTime):
-        print('美盘时间，不做单')
-        # goldStrategy()
-        # btcStrategy()
+        # print('美盘时间，不做单')
+        goldStrategy()
+        btcStrategy()
+        usoil()
         checkAllIsprofit()
         return
 
