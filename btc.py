@@ -134,7 +134,7 @@ def vibrate2(indicatorData, symbol, timeframe):
 
     else:
         checkCurrentIsprofit(symbol=symbol, retracement=retracement, profit=10)
-        print("gold无明确做多信号", rsi, cci)
+        print("btc无明确做多信号", rsi, cci)
 
 def btcStrategy():
     data = get_historical_data(symbol, timeframe)

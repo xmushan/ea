@@ -48,9 +48,9 @@ def is_within_business_hours(timezone_str='Asia/Shanghai'):
     # # 判断美盘时间（跨午夜）
     if (current_time >= UsaStartTime) or (current_time <= UsaopeEndTime):
         # print('美盘时间，不做单')
-        goldStrategy()
-        btcStrategy()
-        usoil()
+        # goldStrategy()
+        # btcStrategy()
+        # usoil()
         checkAllIsprofit()
         return
 
