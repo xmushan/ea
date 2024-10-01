@@ -92,6 +92,7 @@ def open_order(symbol, lot, order_type, price,timeframe):
         'magic': 234000,
         'type_time': mt5.ORDER_TIME_GTC,
         'type_filling': mt5.ORDER_FILLING_IOC,
+        "comment": "auto",
     }
     result = mt5.order_send(request)
     if result.retcode == 10009:
@@ -126,11 +127,12 @@ def checkAllIsprofit(retracement = -15,profit = 5):
     if not orders:
         return
     orders_df = pd.DataFrame(list(orders), columns=orders[0]._asdict().keys())
+    filtered_orders_df = orders_df[orders_df['comment'] == 'auto']
     # 单笔最大回撤金额
-    for index, order in orders_df.iterrows():
+    for index, order in filtered_orders_df.iterrows():
         if (order['profit'] <= retracement):
             set_protective_stop(order)
-    for index, order in orders_df.iterrows():
+    for index, order in filtered_orders_df.iterrows():
         if order['profit'] >= profit:
             set_protective_stop(order)
 
@@ -142,7 +144,9 @@ def checkCurrentIsprofit(symbol, retracement=-10, profit=5, order_type=None,onCa
     if not orders:
         return
     orders_df = pd.DataFrame(list(orders), columns=orders[0]._asdict().keys())
-    filtered_orders_df = orders_df[orders_df['symbol'] == symbol]
+    filtered_orders_df = orders_df[
+        (orders_df['symbol'] == symbol) & (orders_df['comment'] == 'auto')
+    ]
     if order_type:
         # 过滤多单或空单
         if order_type == 'buy':
