@@ -102,25 +102,31 @@ def goldStrategy():
         signals.append("📈 MACD 动能支持上涨")
     if latest['sma_fast'] > latest['sma_slow']:
         signals.append("✅ 均线金叉")
-    if latest['cci'] > 100:
-        signals.append("⚠️ CCI 强势区间")
 
     # 满足条件进行下单
-    if len(signals) >= 3:
+    if len(signals) >= 2:
         print("📈 满足做多条件：\n" + "\n".join(signals))
-        
+        if (last_kline_time == current_kline_time):
+            # checkCurrentIsprofit(symbol = symbol,retracement = retracement,profit=5)
+            print('当前K线下过单')
+            return
         # 突破策略：当前价格突破阻力位
         if bid > resistance:
             print(f"🔔 当前价格突破阻力位，准备下单做多！")
             last_kline_time = current_kline_time
             open_order(symbol, 0.04, mt5.ORDER_TYPE_BUY, bid, timeframe)
         # 回调策略：当前价格接近支撑位
-        elif support < bid < support + 3:
+        elif support < bid and bid < (support + 3):
             print(f"🔔 当前价格接近支撑位，准备低吸！")
             last_kline_time = current_kline_time
-            open_order(symbol, 0.04, mt5.ORDER_TYPE_BUY, bid, timeframe)
+            open_order(symbol, 0.1, mt5.ORDER_TYPE_BUY, bid, timeframe)
+        elif latest['rsi'] < 30:
+            open_order(symbol, 0.02, mt5.ORDER_TYPE_BUY, bid, timeframe)
+        # 判断 CCI 是否适合做多
+        elif latest['cci'] < 100:
+            open_order(symbol, 0.02, mt5.ORDER_TYPE_BUY, bid, timeframe)
         else:
             print(bid,resistance,support)
     else:
-        print("⏳ 信号不够明确，暂不进场。\n" + "\n".join(signals))
+        print("⏳ 信号不够明确，暂不进场。\n" + "\n".join(signals),support+3)
 
