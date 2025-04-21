@@ -1,14 +1,23 @@
 import MetaTrader5 as mt5
 import pandas as pd
 import numpy as np
-from datetime import datetime,timezone
-import time as timeSleep
+from datetime import datetime,timezone,time
+import pytz
+# import time as timeSleep
 
 # 买价(Bid) – 卖价(Ask)
 slippage = 5  # 允许的价格滑点
 last_kline_time = None  # 用于存储上一次K线时间戳
-bars = 100
+bars = 1000
 lossAcount = 0 # 亏损次数
+
+def save_to_csv(dataframe, filename='gold_h1.csv'):
+    if dataframe is not None and not dataframe.empty:
+        # 保存 CSV 文件
+        dataframe.to_csv(filename, index=False, encoding='utf-8-sig')
+    else:
+        print("⚠️ 无数据保存")
+
 
 # 获取历史数据
 def get_historical_data(symbol, timeframe):
@@ -18,6 +27,7 @@ def get_historical_data(symbol, timeframe):
         return None
     rates_frame = pd.DataFrame(rates)
     rates_frame['time'] = pd.to_datetime(rates_frame['time'], unit='s')
+    save_to_csv(rates_frame)
     return rates_frame
 
 
@@ -139,7 +149,7 @@ def checkAllIsprofit(retracement = -15,profit = 5):
 
 
 # 当前订单是否获得收益
-def checkCurrentIsprofit(symbol, retracement=-10, profit=5, order_type=None,onCallBack = None):
+def checkCurrentIsprofit(symbol, retracement=-100, profit=30, order_type=None,onCallBack = None):
     orders = mt5.positions_get()
     if not orders:
         return
@@ -167,6 +177,32 @@ def checkCurrentIsprofit(symbol, retracement=-10, profit=5, order_type=None,onCa
         for index, order in filtered_orders_df.iterrows():
             if order['profit'] >= profit:
                 set_protective_stop(order)
+
+
+# 开仓时间
+def is_within_business_hours(timezone_str='Asia/Shanghai'):
+    global timeframe
+    # 获取指定时区的当前时间
+    timezone = pytz.timezone(timezone_str)
+    current_time = datetime.now(timezone).time()
+    # 亚洲盘时间
+    asiaStartTime = time(7, 0, 0)
+    asiaEndTime = time(15, 30, 0)
+    # 欧洲盘时间
+    EuropeStartTime = time(15, 30, 0)
+    EuropeEndTime = time(19, 30, 0)
+    # 美盘时间
+    UsaStartTime = time(20, 30, 0)
+    UsaopeEndTime = time(7, 0, 0)
+    # 判断亚洲盘时间
+    if asiaStartTime <= current_time <= asiaEndTime:
+        return '1'
+    # # 判断欧洲盘时间
+    if EuropeStartTime <= current_time <= EuropeEndTime:
+        return '2'
+    # # 判断美盘时间（跨午夜）
+    if (current_time >= UsaStartTime) or (current_time <= UsaopeEndTime):
+        return '3'
 
 
 def set_protective_stop(order):
