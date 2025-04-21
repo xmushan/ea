@@ -61,12 +61,11 @@ def is_within_business_hours(timezone_str='Asia/Shanghai'):
 def main():
     goldStrategy()
 
-main()
 # 先执行一次获取新闻
 # get_all_news_and_save()
 
 # 然后再开始无限循环 main
-# while True:
-#     main()
-#     timeSleep.sleep(1)
+while True:
+    main()
+    timeSleep.sleep(1)
 
