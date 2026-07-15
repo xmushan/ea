@@ -1,0 +1,29 @@
+iex (irm https://hermes-agent.nousresearch.com
+
+
+
+Please make sure you have the correct access rights
+and the repository exists.
+-> SSH failed, trying HTTPS...
+Cloning into 'C:\Users\Administrator\AppData\Local\hermes\hermes-agent'...
+remote: Enumerating objects: 7143, done.
+remote: Counting objects: 100% (7143/7143), done.
+remote: Compressing objects: 100% (6795/6795), done.
+remote: Total 7143 (delta 163), reused 6295 (delta 150), pack-reused 0 (from 0)
+Receiving objects: 100% (7143/7143), 67.94 MiB | 922.00 KiB/s, done.
+Resolving deltas: 100% (163/163), done.
+fatal: Out of memory, realloc failed
+warning: Clone succeeded, but checkout failed.
+You can inspect what was checked out with 'git status'
+and retry with 'git restore --source=HEAD :/'
+
+[!] Git clone failed -- downloading ZIP archive instead...
+[OK] Downloaded and extracted
+Initialized empty Git repository in C:/Users/Administrator/AppData/Local/hermes/hermes-agent/.git/
+[X] ZIP download also failed: hint: Using 'master' as the name for the initial branch. This default branch name
+
+[X] Installation failed: Failed to download repository (tried git clone SSH, HTTPS, and ZIP)
+
+-> If the error is unclear, try downloading and running the script directly:
+  Invoke-WebRequest -Uri 'https://hermes-agent.nousresearch.com/install.ps1' -OutFile install.ps1
+  .\install.ps1
